@@ -25,11 +25,9 @@ El OTP es **multi-transporte**: WhatsApp, Telegram, SMS (Twilio) y correo (SMTP)
 - `POST /register/request-otp` `{destination, destinationKind:'phone'|'email', transport}` → `200 {ok, expiresInSeconds, resendAfterSeconds}` | `429 rate_limited` | `503 channel_not_configured` | `502 send_failed`
 - `POST /register/verify-otp` `{destination, code}` → `200 {ok, verified, destinationKind}` | `400 invalid_code` | `410 expired_code` | `429 too_many_attempts` | `404 not_found`
 - `GET /register/farms/search?q=` → `200 {results: [{id, name, location, adminName}]}` (máx. 5)
-- `POST /register` `{kind:'owner'|'worker', user, farm?, farmId?, workers?}` → `201 {farmId?, operatorId, membershipStatus, session:{token, expiresInSeconds}}` | `409 duplicate_identification|duplicate_farm|already_member` | `412 phone_not_verified` | `404 farm_not_found` | `400 validation`
-- **Segunda finca (multi-granja):** se reenvía `POST /register` con el mismo bloque `user` y una finca distinta. El backend reconoce a la persona por su identificación y, si el destino sigue verificado dentro de la ventana de gracia, agrega la finca en vez de responder `duplicate_identification`. Si la ventana venció, hay que repetir el OTP.
+- `POST /register` `{kind:'owner'|'worker', user, farm?, farmId?, workers?}` → `201 {farmId?, operatorId, membershipStatus, session:{token, expiresInSeconds}}` | `409 duplicate_identification|duplicate_farm|already_member` | `404 farm_not_found` | `400 validation`
+- **Segunda finca (multi-granja):** se reenvía `POST /register` con el mismo bloque `user` y una finca distinta. El backend reconoce a la persona por su identificación y agrega la finca en vez de responder `duplicate_identification`.
 - Todos los errores se mapean a mensajes en español claros para el usuario (tono de marca: cercano, de "tú", sin tecnicismos).
-
-Verificar el **correo** también habilita el registro. Pero si solo se verificó el correo, el backend no liga la identidad de WhatsApp: esa persona no será reconocida al escribirle al bot hasta que verifique su celular. No prometas en la interfaz que ya puede usar WhatsApp si solo verificó el correo.
 
 ## Marca (ver design/ds/readme.md — es la guía completa)
 
