@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/porcia-design-system-e3a0bfc6-daf2-43b8-a2cf-853c9e31b142/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/porcia-design-system-e3a0bfc6-daf2-43b8-a2cf-853c9e31b142/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/porcia-design-system-e3a0bfc6-daf2-43b8-a2cf-853c9e31b142/tokens/effects.css">
+  <link rel="stylesheet" href="_ds/porcia-design-system-e3a0bfc6-daf2-43b8-a2cf-853c9e31b142/styles.css">
+  <script src="_ds/porcia-design-system-e3a0bfc6-daf2-43b8-a2cf-853c9e31b142/_ds_bundle.js"></script>
+  <style>
+    body{margin:0;background:var(--bg)}
+    a{color:var(--teal)}
+    a:hover{color:var(--teal-dark)}
+    input:focus,textarea:focus{outline:2px solid var(--focus-ring);outline-offset:1px}
+    .otp-box:focus{outline:2px solid var(--focus-ring);outline-offset:1px}
+  </style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:clamp(24px,5vw,56px) 20px 60px;font-family:var(--font-body);box-sizing:border-box">
+
+  <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:clamp(20px,4vw,28px)">
+    <div style="display:flex;align-items:center;gap:10px">
+      <img src="assets/porcia-mark.png" alt="PorcIA" style="width:36px;height:36px;object-fit:contain">
+      <span style="font-family:var(--font-display);font-weight:600;font-size:20px;color:var(--ink)">PorcIA</span>
+    </div>
+    <div style="display:flex;gap:8px">
+
+
+
+    </div>
+  </div>
+
+  <div style="width:100%;max-width:{{ containerWidth }}">
+
+    <sc-if value="{{ showWizard }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-bottom:22px">
+        <div style="display:flex;gap:6px;margin-bottom:12px">
+          <sc-for list="{{ segments }}" as="seg" hint-placeholder-count="4">
+            <div style="flex:1;height:5px;border-radius:999px;background:{{ seg.color }}"></div>
+          </sc-for>
+        </div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between">
+          <span style="font-family:var(--font-display);font-weight:600;font-size:22px;color:var(--ink)">{{ stepTitle }}</span>
+          <span style="font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted)">Paso {{ displayStep }} de {{ totalSteps }}</span>
+        </div>
+        <p style="margin:6px 0 0;font-size:14px;color:var(--text-body);line-height:1.5">{{ stepSubtitle }}</p>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isStep0 }}" hint-placeholder-val="{{ true }}">
+      <div style="margin-bottom:14px;text-align:center">
+        <span style="font-family:var(--font-display);font-weight:600;font-size:24px;color:var(--ink)">¿Cómo te unes a PorcIA?</span>
+        <p style="margin:8px 0 0;font-size:14px;color:var(--text-body);line-height:1.5">El registro funciona igual desde la web, WhatsApp o Telegram.</p>
+      </div>
+    </sc-if>
+
+    <div style="border-radius:24px;padding:clamp(24px,4vw,34px);background:#fff;border:1px solid var(--border-soft);box-shadow:0 12px 32px rgba(44,53,49,.1);box-sizing:border-box">
+
+      <sc-if value="{{ isStep0 }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div onClick="{{ selectAdmin }}" style="border:1.5px solid var(--border-soft);border-radius:20px;padding:22px;cursor:pointer;display:flex;flex-direction:column;gap:6px" style-hover="border-color:var(--teal)">
+            <span style="font-family:var(--font-display);font-weight:600;font-size:17px;color:var(--ink)">Soy dueño/administrador</span>
+            <span style="font-size:13.5px;color:var(--text-body);line-height:1.5">Voy a registrar mi finca desde cero y administrar mi equipo.</span>
+          </div>
+          <div onClick="{{ selectWorker }}" style="border:1.5px solid var(--border-soft);border-radius:20px;padding:22px;cursor:pointer;display:flex;flex-direction:column;gap:6px" style-hover="border-color:var(--teal)">
+            <span style="font-family:var(--font-display);font-weight:600;font-size:17px;color:var(--ink)">Soy trabajador</span>
+            <span style="font-size:13.5px;color:var(--text-body);line-height:1.5">Quiero unirme a una finca que ya está registrada en PorcIA.</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isStep1 }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div>
+            <div style="font-weight:700;font-size:13px;color:var(--ink);margin-bottom:8px">Tipo de identificación</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <sc-for list="{{ tipoIdUsuarioOptions }}" as="opt" hint-placeholder-count="3">
+                <button onClick="{{ opt.onClick }}" style="{{ opt.style }}">{{ opt.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,64px" label="Número de identificación" placeholder="Ej. 1032456789" value="{{ usuarioIdentificacion }}" onChange="{{ onUsuarioIdChange }}"></x-import>
+          <sc-if value="{{ errors.usuarioIdentificacion }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:-12px;font-size:12.5px;color:var(--accent-ink)">Ingresa un número de identificación válido.</div>
+          </sc-if>
+
+          <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,64px" label="Celular (WhatsApp)" type="tel" placeholder="Ej. 3001234567" value="{{ usuarioCelular }}" onChange="{{ onUsuarioCelularChange }}"></x-import>
+          <sc-if value="{{ errors.usuarioCelular }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:-12px;font-size:12.5px;color:var(--accent-ink)">Ingresa un celular colombiano válido (10 dígitos).</div>
+          </sc-if>
+
+          <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,64px" label="Correo electrónico (opcional)" type="email" placeholder="tucorreo@ejemplo.com" value="{{ usuarioCorreo }}" onChange="{{ onUsuarioCorreoChange }}"></x-import>
+
+          <div style="background:var(--bg);border-radius:14px;padding:14px 16px;display:flex;gap:10px;align-items:flex-start">
+            <span style="flex:none;width:8px;height:8px;border-radius:50%;background:var(--teal);margin-top:6px"></span>
+            <p style="margin:0;font-size:13px;line-height:1.5;color:var(--text-body)">{{ roleHint }}</p>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isStep2 }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:18px;align-items:center;text-align:center">
+          <div style="width:56px;height:56px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center">
+            <span style="width:20px;height:20px;border-radius:50%;background:var(--teal)"></span>
+          </div>
+          <p style="margin:0;font-size:14.5px;line-height:1.55;color:var(--text-body);max-width:380px">Enviamos un código de verificación por WhatsApp al número <strong style="color:var(--ink)">{{ usuarioCelular }}</strong>.</p>
+
+          <div style="display:flex;gap:9px">
+            <input class="otp-box" maxlength="1" inputmode="numeric" value="{{ otp.0 }}" onChange="{{ onOtpChange0 }}" style="width:44px;height:54px;text-align:center;font-size:22px;font-weight:700;font-family:var(--font-display);border:1.5px solid var(--border-soft);border-radius:12px;color:var(--ink)">
+            <input class="otp-box" maxlength="1" inputmode="numeric" value="{{ otp.1 }}" onChange="{{ onOtpChange1 }}" style="width:44px;height:54px;text-align:center;font-size:22px;font-weight:700;font-family:var(--font-display);border:1.5px solid var(--border-soft);border-radius:12px;color:var(--ink)">
+            <input class="otp-box" maxlength="1" inputmode="numeric" value="{{ otp.2 }}" onChange="{{ onOtpChange2 }}" style="width:44px;height:54px;text-align:center;font-size:22px;font-weight:700;font-family:var(--font-display);border:1.5px solid var(--border-soft);border-radius:12px;color:var(--ink)">
+            <input class="otp-box" maxlength="1" inputmode="numeric" value="{{ otp.3 }}" onChange="{{ onOtpChange3 }}" style="width:44px;height:54px;text-align:center;font-size:22px;font-weight:700;font-family:var(--font-display);border:1.5px solid var(--border-soft);border-radius:12px;color:var(--ink)">
+            <input class="otp-box" maxlength="1" inputmode="numeric" value="{{ otp.4 }}" onChange="{{ onOtpChange4 }}" style="width:44px;height:54px;text-align:center;font-size:22px;font-weight:700;font-family:var(--font-display);border:1.5px solid var(--border-soft);border-radius:12px;color:var(--ink)">
+            <input class="otp-box" maxlength="1" inputmode="numeric" value="{{ otp.5 }}" onChange="{{ onOtpChange5 }}" style="width:44px;height:54px;text-align:center;font-size:22px;font-weight:700;font-family:var(--font-display);border:1.5px solid var(--border-soft);border-radius:12px;color:var(--ink)">
+          </div>
+
+          <sc-if value="{{ errors.otp }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:12.5px;color:var(--accent-ink)">Código incorrecto. Verifica los 6 dígitos.</div>
+          </sc-if>
+
+          <p style="margin:0;font-size:12.5px;color:var(--text-muted)">Código de prueba: <strong>123456</strong></p>
+
+          <button onClick="{{ resendOtp }}" disabled="{{ resendDisabled }}" style="{{ resendStyle }}">{{ resendLabel }}</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isStep3Admin }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,64px" label="Nombre de la finca/granja" placeholder="Ej. Finca La Esperanza" value="{{ fincaNombre }}" onChange="{{ onFincaNombreChange }}"></x-import>
+
+          <div>
+            <div style="font-weight:700;font-size:13px;color:var(--ink);margin-bottom:8px">Tipo de persona</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <sc-for list="{{ tipoPersonaOptions }}" as="opt" hint-placeholder-count="2">
+                <button onClick="{{ opt.onClick }}" style="{{ opt.style }}">{{ opt.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,64px" label="{{ fincaIdLabel }}" placeholder="{{ fincaIdPlaceholder }}" value="{{ fincaIdentificacion }}" onChange="{{ onFincaIdChange }}"></x-import>
+
+          <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,64px" label="Ubicación (vereda, municipio, departamento)" placeholder="Ej. Vereda El Rosal, Sonsón, Antioquia" value="{{ fincaUbicacion }}" onChange="{{ onFincaUbicacionChange }}"></x-import>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,64px" label="Capacidad de ceba" type="number" placeholder="0" value="{{ fincaCapacidadCeba }}" onChange="{{ onFincaCapacidadCebaChange }}"></x-import>
+            <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,64px" label="Capacidad de cría" type="number" placeholder="0" value="{{ fincaCapacidadCria }}" onChange="{{ onFincaCapacidadCriaChange }}"></x-import>
+          </div>
+
+          <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,64px" label="Capacidad total (cerdos)" type="number" placeholder="0" value="{{ fincaCapacidad }}" onChange="{{ onFincaCapacidadChange }}"></x-import>
+
+          <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,64px" label="Registro sanitario (ICA)" placeholder="Ej. RS-00123456" value="{{ fincaRegistroSanitario }}" onChange="{{ onFincaRegistroChange }}"></x-import>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isStep3Worker }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,64px" label="Busca tu finca" placeholder="Nombre de la finca o ubicación" value="{{ fincaSearchQuery }}" onChange="{{ onFincaSearchChange }}"></x-import>
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ farmResults }}" as="f" hint-placeholder-count="2">
+              <div onClick="{{ f.onSelect }}" style="{{ f.style }}">
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <span style="font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--ink)">{{ f.nombre }}</span>
+                  <span style="font-size:12.5px;color:var(--text-muted)">{{ f.ubicacion }} · Admin: {{ f.admin }}</span>
+                </div>
+                <span style="{{ f.checkStyle }}"></span>
+              </div>
+            </sc-for>
+            <sc-if value="{{ noFarmResults }}" hint-placeholder-val="{{ false }}">
+              <p style="margin:4px 0 0;font-size:13.5px;color:var(--text-muted)">No encontramos fincas con ese nombre. Verifica con tu administrador el nombre exacto.</p>
+            </sc-if>
+          </div>
+
+          <sc-if value="{{ hasSelectedFinca }}" hint-placeholder-val="{{ false }}">
+            <div style="background:var(--bg);border-radius:14px;padding:14px 16px;font-size:13px;line-height:1.5;color:var(--text-body)">Enviaremos tu solicitud al administrador de <strong style="color:var(--ink)">{{ selectedFincaNombre }}</strong> para que apruebe tu ingreso como trabajador.</div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isStep4 }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <p style="margin:0;font-size:14px;line-height:1.55;color:var(--text-body)">¿Quieres invitar trabajadores a tu finca ahora? Podrás hacerlo también más tarde desde tu panel.</p>
+
+          <sc-for list="{{ workers }}" as="w" hint-placeholder-count="0">
+            <div style="border:1px solid var(--border-soft);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;position:relative">
+              <button onClick="{{ w.onRemove }}" style="position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text-muted);font-size:13px;font-weight:700;cursor:pointer">Quitar</button>
+              <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,60px" label="Nombre completo" placeholder="Nombre del trabajador" value="{{ w.nombre }}" onChange="{{ w.onNombreChange }}"></x-import>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,60px" label="Cédula" placeholder="Número" value="{{ w.identificacion }}" onChange="{{ w.onIdChange }}"></x-import>
+                <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,60px" label="Celular (WhatsApp)" type="tel" placeholder="Número" value="{{ w.celular }}" onChange="{{ w.onCelularChange }}"></x-import>
+              </div>
+            </div>
+          </sc-for>
+
+          <button onClick="{{ addWorker }}" style="align-self:flex-start;background:none;border:1.5px dashed var(--border-strong);color:var(--ink);font-family:var(--font-body);font-weight:700;font-size:14px;padding:11px 20px;border-radius:14px;cursor:pointer">+ Agregar trabajador</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isStep5 }}" hint-placeholder-val="{{ false }}">
+        <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.SuccessState" hint-size="100%,260px" title="{{ successTitle }}">
+          {{ successCopy }}
+        </x-import>
+        <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:6px">
+          <sc-for list="{{ summaryBadges }}" as="b" hint-placeholder-count="3">
+            <span style="background:var(--tan);color:var(--ink);font-size:12.5px;font-weight:700;padding:6px 14px;border-radius:999px">{{ b }}</span>
+          </sc-for>
+        </div>
+        <div style="display:flex;justify-content:center;gap:12px;margin-top:22px;flex-wrap:wrap">
+          <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Button" hint-size="auto,52px" variant="primary" onClick="{{ goToProfile }}">Ver mi perfil</x-import>
+          <sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}">
+            <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Button" hint-size="auto,52px" variant="ghost" onClick="{{ resetForNewFarm }}">Registrar otra finca</x-import>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isStep6 }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:28px">
+
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+              <span style="font-family:var(--font-display);font-weight:600;font-size:19px;color:var(--ink)">Tu cuenta</span>
+              <button onClick="{{ toggleEditUsuario }}" style="background:none;border:1.5px solid var(--border-soft);border-radius:999px;padding:8px 16px;font-family:var(--font-body);font-weight:700;font-size:13px;color:var(--ink);cursor:pointer">{{ editUsuarioLabel }}</button>
+            </div>
+
+            <sc-if value="{{ editingUsuario }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:16px">
+                <div>
+                  <div style="font-weight:700;font-size:13px;color:var(--ink);margin-bottom:8px">Tipo de identificación</div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <sc-for list="{{ tipoIdUsuarioOptions }}" as="opt" hint-placeholder-count="3">
+                      <button onClick="{{ opt.onClick }}" style="{{ opt.style }}">{{ opt.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+                <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,64px" label="Número de identificación" value="{{ usuarioIdentificacion }}" onChange="{{ onUsuarioIdChange }}"></x-import>
+                <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,64px" label="Celular (WhatsApp)" type="tel" value="{{ usuarioCelular }}" onChange="{{ onUsuarioCelularChange }}"></x-import>
+                <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,64px" label="Correo electrónico" type="email" value="{{ usuarioCorreo }}" onChange="{{ onUsuarioCorreoChange }}"></x-import>
+              </div>
+            </sc-if>
+            <sc-if value="{{ !editingUsuario }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column">
+                <sc-for list="{{ usuarioRows }}" as="row" hint-placeholder-count="4">
+                  <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-soft);gap:12px">
+                    <span style="font-size:13.5px;color:var(--text-muted)">{{ row.label }}</span>
+                    <span style="font-size:14px;color:var(--ink);font-weight:600;text-align:right">{{ row.value }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+
+          <sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                <span style="font-family:var(--font-display);font-weight:600;font-size:19px;color:var(--ink)">Tu finca</span>
+                <button onClick="{{ toggleEditFinca }}" style="background:none;border:1.5px solid var(--border-soft);border-radius:999px;padding:8px 16px;font-family:var(--font-body);font-weight:700;font-size:13px;color:var(--ink);cursor:pointer">{{ editFincaLabel }}</button>
+              </div>
+
+              <sc-if value="{{ editingFinca }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:16px">
+                  <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,64px" label="Nombre de la finca" value="{{ fincaNombre }}" onChange="{{ onFincaNombreChange }}"></x-import>
+                  <div>
+                    <div style="font-weight:700;font-size:13px;color:var(--ink);margin-bottom:8px">Tipo de persona</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                      <sc-for list="{{ tipoPersonaOptions }}" as="opt" hint-placeholder-count="2">
+                        <button onClick="{{ opt.onClick }}" style="{{ opt.style }}">{{ opt.label }}</button>
+                      </sc-for>
+                    </div>
+                  </div>
+                  <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,64px" label="{{ fincaIdLabel }}" value="{{ fincaIdentificacion }}" onChange="{{ onFincaIdChange }}"></x-import>
+                  <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,64px" label="Ubicación" value="{{ fincaUbicacion }}" onChange="{{ onFincaUbicacionChange }}"></x-import>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+                    <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,64px" label="Capacidad de ceba" type="number" value="{{ fincaCapacidadCeba }}" onChange="{{ onFincaCapacidadCebaChange }}"></x-import>
+                    <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,64px" label="Capacidad de cría" type="number" value="{{ fincaCapacidadCria }}" onChange="{{ onFincaCapacidadCriaChange }}"></x-import>
+                  </div>
+                  <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,64px" label="Capacidad total" type="number" value="{{ fincaCapacidad }}" onChange="{{ onFincaCapacidadChange }}"></x-import>
+                  <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Input" hint-size="100%,64px" label="Registro sanitario (ICA)" value="{{ fincaRegistroSanitario }}" onChange="{{ onFincaRegistroChange }}"></x-import>
+                </div>
+              </sc-if>
+              <sc-if value="{{ !editingFinca }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column">
+                  <sc-for list="{{ fincaRows }}" as="row" hint-placeholder-count="6">
+                    <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-soft);gap:12px">
+                      <span style="font-size:13.5px;color:var(--text-muted)">{{ row.label }}</span>
+                      <span style="font-size:14px;color:var(--ink);font-weight:600;text-align:right">{{ row.value }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ hasWorkers }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:16px">
+                  <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px">Equipo invitado</div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <sc-for list="{{ workers }}" as="w" hint-placeholder-count="0">
+                      <span style="background:var(--tan);color:var(--ink);font-size:12.5px;font-weight:700;padding:6px 14px;border-radius:999px">{{ w.nombre }}</span>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isWorker }}" hint-placeholder-val="{{ false }}">
+            <div>
+              <span style="font-family:var(--font-display);font-weight:600;font-size:19px;color:var(--ink)">Tu solicitud</span>
+              <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-soft);gap:12px">
+                  <span style="font-size:13.5px;color:var(--text-muted)">Finca</span>
+                  <span style="font-size:14px;color:var(--ink);font-weight:600">{{ selectedFincaNombre }}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0">
+                  <span style="font-size:13.5px;color:var(--text-muted)">Estado</span>
+                  <span style="background:var(--bg-alt);color:var(--ink);font-size:12.5px;font-weight:700;padding:6px 14px;border-radius:999px;border:1.5px dashed var(--border-strong)">Pendiente de aprobación</span>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showWizard }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:28px;gap:12px">
+          <sc-if value="{{ showBack }}" hint-placeholder-val="{{ false }}">
+            <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Button" hint-size="auto,52px" variant="ghost" onClick="{{ goBack }}">Atrás</x-import>
+          </sc-if>
+          <sc-if value="{{ !showBack }}" hint-placeholder-val="{{ true }}">
+            <span></span>
+          </sc-if>
+          <x-import component-from-global-scope="PorcIADesignSystem_e3a0bf.Button" hint-size="auto,52px" variant="primary" onClick="{{ primaryAction }}" disabled="{{ primaryDisabled }}">{{ primaryLabel }}</x-import>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const TIPO_ID_USUARIO = [
+  { value: 'CC', label: 'Cédula de ciudadanía' },
+  { value: 'CE', label: 'Cédula de extranjería' },
+  { value: 'PA', label: 'Pasaporte' },
+];
+const TIPO_PERSONA = [
+  { value: 'natural', label: 'Persona natural' },
+  { value: 'juridica', label: 'Persona jurídica' },
+];
+const MOCK_FARMS = [
+  { id: 'f1', nombre: 'Finca La Esperanza', ubicacion: 'Sonsón, Antioquia', admin: 'Carlos Restrepo' },
+  { id: 'f2', nombre: 'Granja El Roble', ubicacion: 'Marinilla, Antioquia', admin: 'Luisa Gómez' },
+  { id: 'f3', nombre: 'Finca Los Naranjos', ubicacion: 'La Ceja, Antioquia', admin: 'Andrés Ramírez' },
+];
+
+const pillStyle = (selected) => ({
+  background: selected ? 'var(--teal)' : '#fff',
+  color: selected ? '#fff' : 'var(--ink)',
+  border: '1.5px solid ' + (selected ? 'var(--teal)' : 'var(--border-soft)'),
+  borderRadius: '999px', padding: '10px 18px', fontFamily: 'var(--font-body)',
+  fontWeight: 600, fontSize: 14, cursor: 'pointer',
+});
+
+const farmCardStyle = (selected) => ({
+  border: '1.5px solid ' + (selected ? 'var(--teal)' : 'var(--border-soft)'),
+  borderRadius: '16px', padding: '14px 16px', cursor: 'pointer',
+  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+  background: selected ? 'var(--bg)' : '#fff',
+});
+
+let workerUid = 0;
+
+class Component extends DCLogic {
+  state = {
+    step: 0,
+    role: null,
+    usuarioTipoId: 'CC',
+    usuarioIdentificacion: '',
+    usuarioCelular: '',
+    usuarioCorreo: '',
+    otp: ['', '', '', '', '', ''],
+    resendTimer: 0,
+    fincaNombre: '',
+    fincaTipoPersona: 'natural',
+    fincaIdentificacion: '',
+    fincaUbicacion: '',
+    fincaCapacidad: '',
+    fincaCapacidadCeba: '',
+    fincaCapacidadCria: '',
+    fincaRegistroSanitario: '',
+    workers: [],
+    fincaSearchQuery: '',
+    selectedFincaId: null,
+    editingUsuario: false,
+    editingFinca: false,
+    errors: {},
+  };
+
+  componentWillUnmount() {
+    if (this._timer) clearInterval(this._timer);
+  }
+
+  startResendTimer() {
+    this.setState({ resendTimer: 30 });
+    if (this._timer) clearInterval(this._timer);
+    this._timer = setInterval(() => {
+      this.setState((s) => {
+        const next = s.resendTimer - 1;
+        if (next <= 0) clearInterval(this._timer);
+        return { resendTimer: Math.max(next, 0) };
+      });
+    }, 1000);
+  }
+
+  validateStep1() {
+    const errs = {};
+    if (!this.state.usuarioIdentificacion.trim()) errs.usuarioIdentificacion = true;
+    if (!/^3\d{9}$/.test(this.state.usuarioCelular.trim())) errs.usuarioCelular = true;
+    return errs;
+  }
+
+  validateStep2() {
+    const code = this.state.otp.join('');
+    if (code.length !== 6 || code !== '123456') return { otp: true };
+    return {};
+  }
+
+  validateStep3Admin() {
+    const errs = {};
+    if (!this.state.fincaNombre.trim()) errs.fincaNombre = true;
+    if (!this.state.fincaIdentificacion.trim()) errs.fincaIdentificacion = true;
+    if (!this.state.fincaUbicacion.trim()) errs.fincaUbicacion = true;
+    return errs;
+  }
+
+  totalSteps() {
+    return this.state.role === 'worker' ? 3 : 4;
+  }
+
+  goNext() {
+    const s = this.state.step;
+    const role = this.state.role;
+    if (s === 1) {
+      const errs = this.validateStep1();
+      if (Object.keys(errs).length) return this.setState({ errors: errs });
+      this.setState({ errors: {}, step: 2 });
+      this.startResendTimer();
+      return;
+    }
+    if (s === 2) {
+      const errs = this.validateStep2();
+      if (Object.keys(errs).length) return this.setState({ errors: errs });
+      if (this._timer) clearInterval(this._timer);
+      this.setState({ errors: {}, step: 3 });
+      return;
+    }
+    if (s === 3) {
+      if (role === 'worker') {
+        if (!this.state.selectedFincaId) return;
+        this.setState({ step: 5 });
+        return;
+      }
+      const errs = this.validateStep3Admin();
+      if (Object.keys(errs).length) return this.setState({ errors: errs });
+      this.setState({ errors: {}, step: 4 });
+      return;
+    }
+    if (s === 4) {
+      this.setState({ step: 5 });
+      return;
+    }
+  }
+
+  goBack() {
+    this.setState((s) => ({ step: Math.max(0, s.step - 1), errors: {} }));
+  }
+
+  selectRole(role) {
+    this.setState({ role, step: 1 });
+  }
+
+  resendOtp() {
+    if (this.state.resendTimer > 0) return;
+    this.setState({ otp: ['', '', '', '', '', ''], errors: {} });
+    this.startResendTimer();
+  }
+
+  addWorker() {
+    const id = 'w' + (workerUid++);
+    this.setState((s) => ({ workers: [...s.workers, { id, nombre: '', identificacion: '', celular: '' }] }));
+  }
+
+  updateWorker(id, field, value) {
+    this.setState((s) => ({ workers: s.workers.map((w) => (w.id === id ? { ...w, [field]: value } : w)) }));
+  }
+
+  removeWorker(id) {
+    this.setState((s) => ({ workers: s.workers.filter((w) => w.id !== id) }));
+  }
+
+  resetForNewFarm() {
+    this.setState({
+      step: 3, fincaNombre: '', fincaTipoPersona: 'natural', fincaIdentificacion: '',
+      fincaUbicacion: '', fincaCapacidad: '', fincaCapacidadCeba: '', fincaCapacidadCria: '',
+      fincaRegistroSanitario: '', workers: [], errors: {},
+    });
+  }
+
+  renderVals() {
+    const s = this.state;
+    const step = s.step;
+    const role = s.role;
+    const isAdmin = role === 'admin';
+    const isWorker = role === 'worker';
+    const totalSteps = this.totalSteps();
+
+    const titles = {
+      1: 'Crea tu cuenta',
+      2: 'Verifica tu WhatsApp',
+      3: isWorker ? 'Busca tu finca' : 'Registra tu finca',
+      4: 'Invita a tu equipo',
+    };
+    const subtitles = {
+      1: 'Estos datos identifican tu cuenta en PorcIA.',
+      2: 'Confirmamos tu número para proteger el acceso a tu cuenta.',
+      3: isWorker ? 'Busca la finca a la que perteneces y solicita unirte.' : 'Con estos datos configuramos el perfil productivo de tu finca.',
+      4: 'Opcional: agrega a las personas que trabajan contigo.',
+    };
+
+    const displayStep = Math.min(step, totalSteps);
+    const segments = Array.from({ length: totalSteps }, (_, i) => ({ color: i < displayStep ? 'var(--teal)' : 'var(--border-soft)' }));
+
+    const otpChangeHandlers = {};
+    for (let i = 0; i < 6; i++) {
+      otpChangeHandlers['onOtpChange' + i] = (e) => {
+        const v = e.target.value.replace(/\D/g, '').slice(-1);
+        this.setState((st) => {
+          const next = [...st.otp];
+          next[i] = v;
+          return { otp: next };
+        });
+      };
+    }
+
+    const tipoIdUsuarioOptions = TIPO_ID_USUARIO.map((o) => ({
+      ...o,
+      style: pillStyle(o.value === s.usuarioTipoId),
+      onClick: () => this.setState({ usuarioTipoId: o.value }),
+    }));
+
+    const tipoPersonaOptions = TIPO_PERSONA.map((o) => ({
+      ...o,
+      style: pillStyle(o.value === s.fincaTipoPersona),
+      onClick: () => this.setState({ fincaTipoPersona: o.value, fincaIdentificacion: '' }),
+    }));
+
+    const fincaIsJuridica = s.fincaTipoPersona === 'juridica';
+
+    const workers = s.workers.map((w) => ({
+      ...w,
+      onNombreChange: (e) => this.updateWorker(w.id, 'nombre', e.target.value),
+      onIdChange: (e) => this.updateWorker(w.id, 'identificacion', e.target.value),
+      onCelularChange: (e) => this.updateWorker(w.id, 'celular', e.target.value),
+      onRemove: () => this.removeWorker(w.id),
+    }));
+
+    const resendDisabled = s.resendTimer > 0;
+    const resendLabel = resendDisabled ? `Reenviar código (${s.resendTimer}s)` : 'Reenviar código';
+    const resendStyle = {
+      background: 'none', border: 'none', fontFamily: 'var(--font-body)', fontWeight: 700,
+      fontSize: 13.5, cursor: resendDisabled ? 'default' : 'pointer',
+      color: resendDisabled ? 'var(--text-muted)' : 'var(--teal)',
+    };
+
+    const query = s.fincaSearchQuery.trim().toLowerCase();
+    const filteredFarms = query
+      ? MOCK_FARMS.filter((f) => f.nombre.toLowerCase().includes(query) || f.ubicacion.toLowerCase().includes(query))
+      : MOCK_FARMS;
+    const farmResults = filteredFarms.map((f) => {
+      const selected = f.id === s.selectedFincaId;
+      return {
+        ...f,
+        style: farmCardStyle(selected),
+        checkStyle: { width: 18, height: 18, borderRadius: '50%', border: '1.5px solid ' + (selected ? 'var(--teal)' : 'var(--border-soft)'), background: selected ? 'var(--teal)' : 'transparent', flex: 'none' },
+        onSelect: () => this.setState({ selectedFincaId: f.id }),
+      };
+    });
+    const selectedFinca = MOCK_FARMS.find((f) => f.id === s.selectedFincaId);
+
+    const primaryLabels = {
+      1: 'Continuar', 2: 'Verificar código',
+      3: isWorker ? 'Enviar solicitud' : 'Continuar',
+      4: 'Finalizar registro',
+    };
+    const primaryDisabled = step === 3 && isWorker && !s.selectedFincaId;
+
+    const idLabel = { CC: 'Cédula de ciudadanía', CE: 'Cédula de extranjería', PA: 'Pasaporte' }[s.usuarioTipoId];
+    const usuarioRows = [
+      { label: 'Rol', value: isAdmin ? 'Administrador/dueño' : 'Trabajador' },
+      { label: 'Tipo de identificación', value: idLabel },
+      { label: 'Identificación', value: s.usuarioIdentificacion || '—' },
+      { label: 'Celular (WhatsApp)', value: s.usuarioCelular || '—' },
+      { label: 'Correo electrónico', value: s.usuarioCorreo || '—' },
+    ];
+    const fincaRows = [
+      { label: 'Nombre', value: s.fincaNombre || '—' },
+      { label: 'Tipo de persona', value: fincaIsJuridica ? 'Persona jurídica' : 'Persona natural' },
+      { label: fincaIsJuridica ? 'NIT' : 'Cédula de ciudadanía', value: s.fincaIdentificacion || '—' },
+      { label: 'Ubicación', value: s.fincaUbicacion || '—' },
+      { label: 'Capacidad de ceba', value: s.fincaCapacidadCeba || '—' },
+      { label: 'Capacidad de cría', value: s.fincaCapacidadCria || '—' },
+      { label: 'Capacidad total', value: s.fincaCapacidad || '—' },
+      { label: 'Registro sanitario (ICA)', value: s.fincaRegistroSanitario || '—' },
+    ];
+
+    return {
+      containerWidth: step === 6 ? '640px' : '560px',
+      showWizard: step >= 1 && step <= totalSteps,
+      isStep0: step === 0,
+      isStep1: step === 1, isStep2: step === 2,
+      isStep3Admin: step === 3 && !isWorker,
+      isStep3Worker: step === 3 && isWorker,
+      isStep4: step === 4, isStep5: step === 5, isStep6: step === 6,
+      displayStep, totalSteps,
+      stepTitle: titles[displayStep], stepSubtitle: subtitles[displayStep],
+      segments,
+      showBack: step >= 1 && step <= totalSteps,
+      goBack: () => this.goBack(),
+      selectAdmin: () => this.selectRole('admin'),
+      selectWorker: () => this.selectRole('worker'),
+      primaryLabel: primaryLabels[step] || 'Continuar',
+      primaryDisabled,
+      primaryAction: () => this.goNext(),
+      errors: s.errors,
+      isAdmin, isWorker,
+      roleHint: isAdmin
+        ? 'Te registras como Administrador/dueño de la cuenta. Podrás invitar trabajadores más adelante.'
+        : 'Te registras como Trabajador. En el siguiente paso buscarás tu finca y enviarás una solicitud para unirte.',
+
+      tipoIdUsuarioOptions,
+      usuarioIdentificacion: s.usuarioIdentificacion,
+      onUsuarioIdChange: (e) => this.setState({ usuarioIdentificacion: e.target.value }),
+      usuarioCelular: s.usuarioCelular,
+      onUsuarioCelularChange: (e) => this.setState({ usuarioCelular: e.target.value.replace(/\D/g, '').slice(0, 10) }),
+      usuarioCorreo: s.usuarioCorreo,
+      onUsuarioCorreoChange: (e) => this.setState({ usuarioCorreo: e.target.value }),
+
+      otp: s.otp,
+      ...otpChangeHandlers,
+      resendOtp: () => this.resendOtp(),
+      resendDisabled,
+      resendLabel,
+      resendStyle,
+
+      tipoPersonaOptions,
+      fincaNombre: s.fincaNombre,
+      onFincaNombreChange: (e) => this.setState({ fincaNombre: e.target.value }),
+      fincaIdLabel: fincaIsJuridica ? 'NIT' : 'Cédula de ciudadanía',
+      fincaIdPlaceholder: fincaIsJuridica ? 'Ej. 900123456-7' : 'Ej. 1032456789',
+      fincaIdentificacion: s.fincaIdentificacion,
+      onFincaIdChange: (e) => this.setState({ fincaIdentificacion: e.target.value }),
+      fincaUbicacion: s.fincaUbicacion,
+      onFincaUbicacionChange: (e) => this.setState({ fincaUbicacion: e.target.value }),
+      fincaCapacidad: s.fincaCapacidad,
+      onFincaCapacidadChange: (e) => this.setState({ fincaCapacidad: e.target.value }),
+      fincaCapacidadCeba: s.fincaCapacidadCeba,
+      onFincaCapacidadCebaChange: (e) => this.setState({ fincaCapacidadCeba: e.target.value }),
+      fincaCapacidadCria: s.fincaCapacidadCria,
+      onFincaCapacidadCriaChange: (e) => this.setState({ fincaCapacidadCria: e.target.value }),
+      fincaRegistroSanitario: s.fincaRegistroSanitario,
+      onFincaRegistroChange: (e) => this.setState({ fincaRegistroSanitario: e.target.value }),
+
+      workers,
+      addWorker: () => this.addWorker(),
+      hasWorkers: s.workers.length > 0,
+
+      fincaSearchQuery: s.fincaSearchQuery,
+      onFincaSearchChange: (e) => this.setState({ fincaSearchQuery: e.target.value }),
+      farmResults,
+      noFarmResults: filteredFarms.length === 0,
+      hasSelectedFinca: !!selectedFinca,
+      selectedFincaNombre: selectedFinca ? selectedFinca.nombre : '',
+
+      goToProfile: () => this.setState({ step: 6 }),
+      resetForNewFarm: () => this.resetForNewFarm(),
+      successTitle: isWorker ? 'Solicitud enviada' : '¡Tu finca ya está registrada!',
+      successCopy: isWorker
+        ? `Enviamos tu solicitud al administrador de ${selectedFinca ? selectedFinca.nombre : 'la finca'}. Te avisaremos por WhatsApp cuando sea aprobada.`
+        : `${s.fincaNombre || 'Tu finca'} quedó registrada junto con tu cuenta de administrador. Ya puedes ingresar a PorcIA desde WhatsApp.`,
+      summaryBadges: isWorker
+        ? [selectedFinca ? selectedFinca.nombre : 'Finca', 'Solicitud pendiente']
+        : [s.fincaNombre || 'Finca', `${s.workers.length} trabajador${s.workers.length === 1 ? '' : 'es'} invitado${s.workers.length === 1 ? '' : 's'}`, fincaIsJuridica ? 'Persona jurídica' : 'Persona natural'],
+
+      editingUsuario: s.editingUsuario,
+      toggleEditUsuario: () => this.setState((st) => ({ editingUsuario: !st.editingUsuario })),
+      editUsuarioLabel: s.editingUsuario ? 'Guardar' : 'Editar',
+      usuarioRows,
+      editingFinca: s.editingFinca,
+      toggleEditFinca: () => this.setState((st) => ({ editingFinca: !st.editingFinca })),
+      editFincaLabel: s.editingFinca ? 'Guardar' : 'Editar',
+      fincaRows,
+    };
+  }
+}
+</script>
+</body>
+</html>

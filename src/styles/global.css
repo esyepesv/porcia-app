@@ -1,0 +1,79 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+a {
+  color: var(--teal);
+}
+a:hover {
+  color: var(--teal-dark);
+}
+
+button {
+  font-family: var(--font-body);
+}
+
+input,
+button {
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+input:focus-visible,
+button:focus-visible,
+.otp-box:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+/* Estados interactivos que no se pueden expresar con estilos inline. */
+
+.pia-btn--primary:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+.pia-btn--ghost:hover:not(:disabled) {
+  border-color: var(--teal);
+  color: var(--teal);
+}
+.pia-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pia-pill:hover:not(.pia-pill--selected) {
+  border-color: var(--teal);
+}
+
+.pia-role-card:hover {
+  border-color: var(--teal);
+}
+
+.pia-farm-row:hover {
+  border-color: var(--teal);
+}
+
+.pia-link-btn:hover:not(:disabled) {
+  color: var(--teal-dark);
+}
+.pia-link-btn:disabled {
+  cursor: default;
+}

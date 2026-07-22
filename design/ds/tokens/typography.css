@@ -1,0 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+:root{
+--font-display:'Fredoka',Inter,sans-serif;
+--font-body:'Inter',system-ui,sans-serif;
+--text-hero:clamp(36px,6.5vw,58px);
+--text-h1:clamp(28px,5vw,44px);
+--text-h2:clamp(28px,5vw,42px);
+--text-h3:20px;
+--text-lead:clamp(16px,2.2vw,18px);
+--text-body-size:15px;
+--text-small:13px;
+--text-eyebrow:12px;
+--leading-tight:1.1;--leading-snug:1.5;--leading-relaxed:1.6;
+--tracking-tight:-0.6px;--tracking-wide:1.5px;
+}
