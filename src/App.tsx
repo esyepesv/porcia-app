@@ -7,6 +7,7 @@ import {
   storeToken,
   submitRegistration,
   verifyOtp,
+  requestAccountEmailOtp, verifyAccountEmailOtp, getLoginDestinations, requestLoginOtp, verifyLoginOtp,
   type ApiError,
 } from './lib/api';
 import { toUserMessage } from './lib/errors';
@@ -44,7 +45,13 @@ import { OtpPage } from './pages/OtpPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { RolePage } from './pages/RolePage';
 import { SuccessPage } from './pages/SuccessPage';
+import { VerifyEmailPage } from './pages/VerifyEmailPage';
+import { LoginPage } from './pages/LoginPage';
 import { TeamPage } from './pages/TeamPage';
+
+// La pantalla OTP se reutiliza en la verificación posterior al registro
+// (siguiente iteración); el wizard ya no la muestra como paso obligatorio.
+void OtpPage;
 
 const ID_LABELS: Record<AccountFormState['identificationType'], string> = {
   CC: 'Cédula de ciudadanía',
@@ -101,6 +108,9 @@ interface UiState {
   registerResult: RegisterResponse | null;
   loading: boolean;
   apiError?: string;
+  screen?: 'verifyEmail' | 'login';
+  emailVerified: boolean;
+  loginDestinations: import('./lib/types').LoginDestination[] | null;
 }
 
 const INITIAL_STATE: UiState = {
@@ -125,10 +135,14 @@ const INITIAL_STATE: UiState = {
   registerResult: null,
   loading: false,
   apiError: undefined,
+  emailVerified: false,
+  loginDestinations: null,
 };
 
+function AppShell({ children }: { children: ReactNode }) { return <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 20 }}><Card>{children}</Card></div>; }
+
 function totalStepsFor(role: Role | null): number {
-  return role === 'worker' ? 3 : 4;
+  return role === 'worker' ? 2 : 3;
 }
 
 let workerUidCounter = 0;
@@ -144,6 +158,15 @@ export function App() {
   function patch(update: Partial<UiState> | ((s: UiState) => Partial<UiState>)): void {
     setState((prev) => ({ ...prev, ...(typeof update === 'function' ? update(prev) : update) }));
   }
+
+  async function beginEmailVerification(): Promise<void> {
+    patch({ loading: true, apiError: undefined }); const result = await requestAccountEmailOtp(state.account.email); patch({ loading: false });
+    if (result.ok) patch({ screen: 'verifyEmail' }); else patch({ apiError: toUserMessage(result.error) });
+  }
+  async function verifyEmail(code: string): Promise<void> { patch({ loading: true, apiError: undefined }); const result = await verifyAccountEmailOtp(state.account.email, code); patch({ loading: false }); if (result.ok) patch({ emailVerified: true, screen: undefined, step: 5 }); else patch({ apiError: toUserMessage(result.error) }); }
+  async function findLogin(identifier: string): Promise<void> { patch({ loading: true, apiError: undefined }); const result = await getLoginDestinations(identifier); patch({ loading: false, loginDestinations: result.ok ? result.data.destinations : null, apiError: result.ok ? undefined : toUserMessage(result.error) }); }
+  async function sendLogin(identifier: string, kind: OtpDestinationKind): Promise<void> { patch({ loading: true, apiError: undefined }); const result = await requestLoginOtp(identifier, kind); patch({ loading: false, apiError: result.ok ? undefined : toUserMessage(result.error) }); }
+  async function login(identifier: string, code: string): Promise<void> { patch({ loading: true, apiError: undefined }); const result = await verifyLoginOtp(identifier, code); patch({ loading: false }); if (result.ok) { storeToken(result.data.session.token); patch({ screen: undefined, step: 5, apiError: undefined }); } else patch({ apiError: toUserMessage(result.error) }); }
 
   function stopResendTimer(): void {
     if (timerRef.current) {
@@ -171,7 +194,7 @@ export function App() {
 
   // Búsqueda de finca (trabajador, paso 3), con debounce de 300ms.
   useEffect(() => {
-    if (!(state.step === 3 && state.role === 'worker')) return;
+    if (!(state.step === 2 && state.role === 'worker')) return;
     const query = state.farmSearchQuery.trim();
     if (!query) {
       patch({ farmSearchResults: [], farmSearchDone: false });
@@ -304,7 +327,7 @@ export function App() {
       identificationNumber: state.account.identificationNumber.trim(),
       phone: toE164Phone(state.account.phone),
       channel: registerChannel,
-      ...(trimmedEmail ? { email: trimmedEmail } : {}),
+    email: trimmedEmail,
     };
   }
 
@@ -330,7 +353,7 @@ export function App() {
       return;
     }
     patch({ accountErrors: {} });
-    void enterOtpStep();
+    patch({ accountErrors: {}, step: 2 });
   }
 
   function handleContinueFarm(): void {
@@ -339,7 +362,7 @@ export function App() {
       patch({ farmErrors: errors });
       return;
     }
-    patch({ farmErrors: {}, step: 4 });
+    patch({ farmErrors: {}, step: 3 });
   }
 
   async function handleSubmitWorkerRequest(): Promise<void> {
@@ -353,7 +376,7 @@ export function App() {
     patch({ loading: false });
     if (result.ok) {
       storeToken(result.data.session.token);
-      patch({ registerResult: result.data, step: 5 });
+      patch({ registerResult: result.data, step: 4 });
       return;
     }
     handleRegisterError(result.error);
@@ -403,7 +426,7 @@ export function App() {
     patch({ loading: false });
     if (result.ok) {
       storeToken(result.data.session.token);
-      patch({ registerResult: result.data, step: 5 });
+      patch({ registerResult: result.data, step: 4 });
       return;
     }
     handleRegisterError(result.error);
@@ -427,13 +450,10 @@ export function App() {
         handleContinueAccount();
         break;
       case 2:
-        void handleVerifyOtp();
-        break;
-      case 3:
         if (state.role === 'worker') void handleSubmitWorkerRequest();
         else handleContinueFarm();
         break;
-      case 4:
+      case 3:
         void handleFinishRegistration();
         break;
       default:
@@ -443,7 +463,7 @@ export function App() {
 
   function resetForNewFarm(): void {
     patch({
-      step: 3,
+      step: 2,
       farm: INITIAL_FARM,
       workers: [],
       farmErrors: {},
@@ -453,6 +473,8 @@ export function App() {
   }
 
   const { role, step } = state;
+  if (state.screen === 'verifyEmail') return <AppShell><VerifyEmailPage email={state.account.email} loading={state.loading} error={state.apiError} onVerify={(code) => void verifyEmail(code)} onResend={() => void beginEmailVerification()} onSkip={() => patch({ screen: undefined, step: 5 })} /></AppShell>;
+  if (state.screen === 'login') return <AppShell><LoginPage loading={state.loading} error={state.apiError} destinations={state.loginDestinations} onFind={(id) => void findLogin(id)} onRequest={(id, kind) => void sendLogin(id, kind)} onVerify={(id, code) => void login(id, code)} onBack={() => patch({ screen: undefined, loginDestinations: null })} /></AppShell>;
   const totalSteps = totalStepsFor(role);
   const showWizard = step >= 1 && step <= totalSteps;
   const displayStep = Math.min(step, totalSteps);
@@ -482,29 +504,25 @@ export function App() {
 
   const titles: Record<number, string> = {
     1: 'Crea tu cuenta',
-    2: otpTitle(),
-    3: isWorker ? 'Busca tu finca' : 'Registra tu finca',
-    4: 'Invita a tu equipo',
+    2: isWorker ? 'Busca tu finca' : 'Registra tu finca',
+    3: 'Invita a tu equipo',
   };
   const subtitles: Record<number, string> = {
     1: 'Estos datos identifican tu cuenta en PorcIA.',
-    2: otpSubtitle(),
-    3: isWorker
+    2: isWorker
       ? 'Busca la finca a la que perteneces y solicita unirte.'
       : 'Con estos datos configuramos el perfil productivo de tu finca.',
-    4: 'Opcional: agrega a las personas que trabajan contigo.',
+    3: 'Opcional: agrega a las personas que trabajan contigo.',
   };
   const primaryLabels: Record<number, string> = {
     1: 'Continuar',
-    2: 'Verificar código',
-    3: isWorker ? 'Enviar solicitud' : 'Continuar',
-    4: 'Finalizar registro',
+    2: isWorker ? 'Enviar solicitud' : 'Continuar',
+    3: 'Finalizar registro',
   };
 
   const primaryDisabled =
     state.loading ||
-    (step === 2 && !state.selectedTransport) ||
-    (step === 3 && isWorker && !state.selectedFarm);
+    (step === 2 && isWorker && !state.selectedFarm);
 
   function otpIntroNode(): ReactNode {
     const transport = state.selectedTransport;
@@ -533,8 +551,19 @@ export function App() {
     }),
   );
 
+  // Conservan las utilidades de OTP listas para la verificación opcional
+  // posterior, sin hacerlas parte del recorrido de registro.
+  void enterOtpStep;
+  void handleSelectTransport;
+  void handleResend;
+  void handleVerifyOtp;
+  void otpTitle;
+  void otpSubtitle;
+  void otpIntroNode;
+  void transportOptions;
+
   function renderStepContent(): ReactNode {
-    if (step === 0) return <RolePage onSelectRole={(r) => patch({ role: r, step: 1 })} />;
+    if (step === 0) return <><RolePage onSelectRole={(r) => patch({ role: r, step: 1 })} /><Button variant="ghost" onClick={() => patch({ screen: 'login', apiError: undefined })}>Ya tengo cuenta</Button></>;
 
     if (step === 1 && role) {
       return (
@@ -547,25 +576,7 @@ export function App() {
       );
     }
 
-    if (step === 2) {
-      return (
-        <OtpPage
-          transportOptions={transportOptions}
-          selectedTransport={state.selectedTransport}
-          onSelectTransport={handleSelectTransport}
-          introNode={otpIntroNode()}
-          otpDigits={state.otpDigits}
-          onOtpChange={(digits) => patch({ otpDigits: digits, otpError: undefined })}
-          otpError={state.otpError}
-          emailNote={state.emailNote}
-          onGoToAccount={() => patch({ step: 1, emailNote: false })}
-          resendTimer={state.resendTimer}
-          onResend={handleResend}
-        />
-      );
-    }
-
-    if (step === 3 && isWorker) {
+    if (step === 2 && isWorker) {
       return (
         <FarmSearchPage
           query={state.farmSearchQuery}
@@ -578,7 +589,7 @@ export function App() {
       );
     }
 
-    if (step === 3 && !isWorker) {
+    if (step === 2 && !isWorker) {
       return (
         <FarmPage
           value={state.farm}
@@ -588,7 +599,7 @@ export function App() {
       );
     }
 
-    if (step === 4) {
+    if (step === 3) {
       return (
         <TeamPage
           workers={state.workers}
@@ -611,7 +622,7 @@ export function App() {
       );
     }
 
-    if (step === 5 && role) {
+    if (step === 4 && role) {
       return (
         <SuccessPage
           role={role}
@@ -619,13 +630,14 @@ export function App() {
           legalType={state.farm.legalType}
           workersCount={state.workers.filter((w) => w.displayName.trim()).length}
           selectedFarmName={state.selectedFarm?.name}
-          onGoToProfile={() => patch({ step: 6 })}
+          onGoToProfile={() => patch({ step: 5 })}
           onRegisterAnotherFarm={resetForNewFarm}
+          onVerifyEmail={() => void beginEmailVerification()}
         />
       );
     }
 
-    if (step === 6 && role) {
+    if (step === 5 && role) {
       const isJuridica = state.farm.legalType === 'juridica';
       return (
         <ProfilePage
@@ -652,6 +664,8 @@ export function App() {
           workers={state.workers}
           selectedFarmName={state.selectedFarm?.name}
           membershipStatus={state.registerResult?.membershipStatus}
+          emailVerified={state.emailVerified}
+          onVerifyEmail={() => void beginEmailVerification()}
         />
       );
     }

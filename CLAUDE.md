@@ -6,7 +6,7 @@ Frontend web de **PorcIA** (asistente porcícola colombiano). **Alcance actual: 
 
 ## Fuente de la verdad
 
-- **Diseño:** `design/Registro.dc.html` + design system en `design/ds/` (tokens y guía importados del proyecto Claude Design "Porcia app registro usuarios y granjas"). El wizard React debe reproducir ese diseño fielmente: paso 0 rol (dueño/trabajador) → paso 1 cuenta → paso 2 OTP 6 dígitos → paso 3 finca (dueño) o búsqueda de finca (trabajador) → paso 4 invitar equipo (dueño, opcional) → éxito → perfil.
+- **Diseño:** `design/Registro.dc.html` + design system en `design/ds/`. El wizard es: rol → cuenta → finca/búsqueda → equipo opcional → éxito → perfil. El OTP es opcional y posterior para verificar correo o iniciar sesión.
 - **Spec funcional:** `backend/specs/001-register-farm-and-user.md` (repo porcia-backend, en el mismo monorepo local `../backend/`). Ahí están los campos, las reglas y el manejo de errores. El flujo spec-first manda: nada se implementa sin spec aprobado.
 - **Diferencia deliberada con el diseño:** los botones "Editar" del perfil (paso 6) NO se implementan en v1 — el perfil es solo lectura (ver spec 001, "NO incluye v1").
 
@@ -26,6 +26,7 @@ El OTP es **multi-transporte**: WhatsApp, Telegram, SMS (Twilio) y correo (SMTP)
 - `POST /register/verify-otp` `{destination, code}` → `200 {ok, verified, destinationKind}` | `400 invalid_code` | `410 expired_code` | `429 too_many_attempts` | `404 not_found`
 - `GET /register/farms/search?q=` → `200 {results: [{id, name, location, adminName}]}` (máx. 5)
 - `POST /register` `{kind:'owner'|'worker', user, farm?, farmId?, workers?}` → `201 {farmId?, operatorId, membershipStatus, session:{token, expiresInSeconds}}` | `409 duplicate_identification|duplicate_farm|already_member` | `404 farm_not_found` | `400 validation`
+- `POST /account/request-otp` y `/account/verify-otp` verifican destinos de una sesión; `POST /auth/destinations|request-otp|verify-otp` soportan login por correo/cédula.
 - **Segunda finca (multi-granja):** se reenvía `POST /register` con el mismo bloque `user` y una finca distinta. El backend reconoce a la persona por su identificación y agrega la finca en vez de responder `duplicate_identification`.
 - Todos los errores se mapean a mensajes en español claros para el usuario (tono de marca: cercano, de "tú", sin tecnicismos).
 

@@ -67,6 +67,21 @@ export interface VerifyOtpResponse {
   destinationKind: OtpDestinationKind;
 }
 
+export interface AccountVerifyResponse {
+  verified: true;
+  destinationKind: OtpDestinationKind;
+}
+
+export interface LoginDestination {
+  kind: OtpDestinationKind;
+  masked: string;
+}
+
+export interface LoginResponse {
+  session: { token: string; expiresInSeconds: number };
+  farms: { farmId: string; farmName: string; role: string }[];
+}
+
 export interface FarmSearchResponse {
   results: FarmSearchResult[];
 }
@@ -76,7 +91,7 @@ export interface RegisterUserPayload {
   identificationNumber: string;
   phone: string;
   channel: Channel;
-  email?: string;
+  email: string;
   displayName?: string;
 }
 

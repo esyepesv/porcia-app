@@ -22,6 +22,8 @@ interface ProfilePageProps {
   workers: WorkerDraft[];
   selectedFarmName?: string;
   membershipStatus?: MembershipStatus;
+  emailVerified: boolean;
+  onVerifyEmail: () => void;
 }
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -54,6 +56,8 @@ export function ProfilePage({
   workers,
   selectedFarmName,
   membershipStatus,
+  emailVerified,
+  onVerifyEmail,
 }: ProfilePageProps) {
   const isOwner = role === 'owner';
 
@@ -77,7 +81,7 @@ export function ProfilePage({
           <Row label="Tipo de identificación" value={identificationTypeLabel} />
           <Row label="Identificación" value={identificationNumber || '—'} />
           <Row label="Celular (WhatsApp)" value={phone || '—'} />
-          <Row label="Correo electrónico" value={email || '—'} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><div style={{ flex: 1 }}><Row label="Correo electrónico" value={email || '—'} /></div><span style={{ fontSize: 12, color: emailVerified ? 'var(--teal)' : 'var(--text-muted)' }}>{emailVerified ? 'Verificado' : 'Sin verificar'}</span>{!emailVerified ? <button type="button" onClick={onVerifyEmail} className="pia-link-btn" style={{ border: 0, background: 'none', color: 'var(--teal)', cursor: 'pointer' }}>Reenviar</button> : null}</div>
         </div>
       </div>
 

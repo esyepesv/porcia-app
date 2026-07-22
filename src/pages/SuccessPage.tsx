@@ -10,6 +10,7 @@ interface SuccessPageProps {
   selectedFarmName?: string;
   onGoToProfile: () => void;
   onRegisterAnotherFarm: () => void;
+  onVerifyEmail: () => void;
 }
 
 /** Paso 5 — confirmación de éxito con badges de resumen. */
@@ -21,6 +22,7 @@ export function SuccessPage({
   selectedFarmName,
   onGoToProfile,
   onRegisterAnotherFarm,
+  onVerifyEmail,
 }: SuccessPageProps) {
   const isWorker = role === 'worker';
 
@@ -79,6 +81,7 @@ export function SuccessPage({
         <Button variant="primary" onClick={onGoToProfile}>
           Ver mi perfil
         </Button>
+        <Button variant="ghost" onClick={onVerifyEmail}>Verificar correo electrónico</Button>
         {!isWorker ? (
           <Button variant="ghost" onClick={onRegisterAnotherFarm}>
             Registrar otra finca

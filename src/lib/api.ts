@@ -7,6 +7,9 @@ import type {
   RegisterResponse,
   RequestOtpResponse,
   VerifyOtpResponse,
+  AccountVerifyResponse,
+  LoginDestination,
+  LoginResponse,
 } from './types';
 
 const TOKEN_STORAGE_KEY = 'porcia_session_token';
@@ -160,4 +163,24 @@ export function submitRegistration(payload: RegisterPayload): Promise<ApiResult<
     method: 'POST',
     body: JSON.stringify(payload),
   });
+}
+
+export function requestAccountEmailOtp(destination: string): Promise<ApiResult<RequestOtpResponse>> {
+  return request<RequestOtpResponse>('/account/request-otp', { method: 'POST', body: JSON.stringify({ destination, destinationKind: 'email', transport: 'email' }) });
+}
+
+export function verifyAccountEmailOtp(destination: string, code: string): Promise<ApiResult<AccountVerifyResponse>> {
+  return request<AccountVerifyResponse>('/account/verify-otp', { method: 'POST', body: JSON.stringify({ destination, code }) });
+}
+
+export function getLoginDestinations(identifier: string): Promise<ApiResult<{ destinations: LoginDestination[] }>> {
+  return request<{ destinations: LoginDestination[] }>('/auth/destinations', { method: 'POST', body: JSON.stringify({ identifier }) });
+}
+
+export function requestLoginOtp(identifier: string, destinationKind: OtpDestinationKind): Promise<ApiResult<RequestOtpResponse>> {
+  return request<RequestOtpResponse>('/auth/request-otp', { method: 'POST', body: JSON.stringify({ identifier, destinationKind, transport: 'email' }) });
+}
+
+export function verifyLoginOtp(identifier: string, code: string): Promise<ApiResult<LoginResponse>> {
+  return request<LoginResponse>('/auth/verify-otp', { method: 'POST', body: JSON.stringify({ identifier, code }) });
 }

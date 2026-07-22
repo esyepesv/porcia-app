@@ -37,11 +37,11 @@ export function validateAccount(input: AccountInput): Record<string, string> {
     errors.phone = phoneResult.error.issues[0]?.message ?? 'Dato inválido.';
   }
 
-  if (input.email.trim().length > 0) {
-    const emailResult = emailSchema.safeParse(input.email);
-    if (!emailResult.success) {
-      errors.email = emailResult.error.issues[0]?.message ?? 'Correo inválido.';
-    }
+  const emailResult = emailSchema.safeParse(input.email);
+  if (!emailResult.success) {
+    errors.email = input.email.trim().length === 0
+      ? 'Necesito tu correo electrónico.'
+      : 'Ese correo no parece válido. Revísalo, por favor.';
   }
 
   return errors;
