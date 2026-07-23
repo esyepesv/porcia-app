@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
+import { usePostHog } from '@posthog/react';
 import {
   getOtpTransports,
   requestOtp,
@@ -140,6 +141,7 @@ function nextWorkerId(): string {
 export function App() {
   const [state, setState] = useState<UiState>(INITIAL_STATE);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const posthog = usePostHog();
 
   function patch(update: Partial<UiState> | ((s: UiState) => Partial<UiState>)): void {
     setState((prev) => ({ ...prev, ...(typeof update === 'function' ? update(prev) : update) }));
@@ -263,12 +265,14 @@ export function App() {
     }
     patch({ emailNote: false });
     if (transport !== state.selectedTransport) {
+      posthog?.capture('registration_otp_transport_selected', { transport });
       void doRequestOtp(transport);
     }
   }
 
   function handleResend(): void {
     if (state.resendTimer > 0) return;
+    posthog?.capture('registration_otp_resent', { transport: state.selectedTransport });
     void doRequestOtp(state.selectedTransport ?? 'whatsapp');
   }
 
@@ -286,12 +290,21 @@ export function App() {
     if (result.ok) {
       if (result.data.verified) {
         stopResendTimer();
+        posthog?.capture('registration_otp_verified', { transport: state.selectedTransport });
         patch({ step: 3, otpError: undefined });
       } else {
+        posthog?.capture('registration_otp_failed', {
+          transport: state.selectedTransport,
+          reason: 'invalid_code',
+        });
         patch({ otpError: 'Código incorrecto. Verifica los 6 dígitos.' });
       }
       return;
     }
+    posthog?.capture('registration_otp_failed', {
+      transport: state.selectedTransport,
+      reason: result.error.kind === 'api' ? result.error.code : result.error.kind,
+    });
     patch({ otpError: toUserMessage(result.error) });
   }
 
@@ -309,6 +322,10 @@ export function App() {
   }
 
   function handleRegisterError(error: ApiError): void {
+    posthog?.capture('registration_failed', {
+      reason: error.kind === 'api' ? error.code : error.kind,
+      role: state.role,
+    });
     if (error.kind === 'api' && error.code === 'phone_not_verified') {
       patch({
         step: 2,
@@ -329,6 +346,11 @@ export function App() {
       patch({ accountErrors: errors });
       return;
     }
+    posthog?.capture('registration_account_submitted', {
+      has_email: state.account.email.trim().length > 0,
+      identification_type: state.account.identificationType,
+      role: state.role,
+    });
     patch({ accountErrors: {} });
     void enterOtpStep();
   }
@@ -339,6 +361,7 @@ export function App() {
       patch({ farmErrors: errors });
       return;
     }
+    posthog?.capture('registration_farm_submitted', { legal_type: state.farm.legalType });
     patch({ farmErrors: {}, step: 4 });
   }
 
@@ -353,6 +376,11 @@ export function App() {
     patch({ loading: false });
     if (result.ok) {
       storeToken(result.data.session.token);
+      posthog?.identify(result.data.operatorId);
+      posthog?.capture('registration_completed', {
+        role: 'worker',
+        membership_status: result.data.membershipStatus,
+      });
       patch({ registerResult: result.data, step: 5 });
       return;
     }
@@ -403,6 +431,12 @@ export function App() {
     patch({ loading: false });
     if (result.ok) {
       storeToken(result.data.session.token);
+      posthog?.identify(result.data.operatorId);
+      posthog?.capture('registration_completed', {
+        role: 'owner',
+        workers_invited: nonEmptyWorkers.length,
+        membership_status: result.data.membershipStatus,
+      });
       patch({ registerResult: result.data, step: 5 });
       return;
     }
@@ -442,6 +476,7 @@ export function App() {
   }
 
   function resetForNewFarm(): void {
+    posthog?.capture('registration_another_farm_started');
     patch({
       step: 3,
       farm: INITIAL_FARM,
@@ -534,7 +569,15 @@ export function App() {
   );
 
   function renderStepContent(): ReactNode {
-    if (step === 0) return <RolePage onSelectRole={(r) => patch({ role: r, step: 1 })} />;
+    if (step === 0)
+      return (
+        <RolePage
+          onSelectRole={(r) => {
+            posthog?.capture('registration_role_selected', { role: r });
+            patch({ role: r, step: 1 });
+          }}
+        />
+      );
 
     if (step === 1 && role) {
       return (
@@ -572,7 +615,10 @@ export function App() {
           onQueryChange={(q) => patch({ farmSearchQuery: q })}
           results={state.farmSearchResults}
           selectedFarm={state.selectedFarm}
-          onSelect={(farm) => patch({ selectedFarm: farm })}
+          onSelect={(farm) => {
+            posthog?.capture('registration_farm_selected');
+            patch({ selectedFarm: farm });
+          }}
           searched={state.farmSearchDone}
         />
       );
