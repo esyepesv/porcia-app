@@ -48,6 +48,8 @@ import { SuccessPage } from './pages/SuccessPage';
 import { VerifyEmailPage } from './pages/VerifyEmailPage';
 import { LoginPage } from './pages/LoginPage';
 import { TeamPage } from './pages/TeamPage';
+import { SplashPage } from './pages/SplashPage';
+import { WelcomePage } from './pages/WelcomePage';
 
 // La pantalla OTP se reutiliza en la verificación posterior al registro
 // (siguiente iteración); el wizard ya no la muestra como paso obligatorio.
@@ -111,7 +113,7 @@ interface UiState {
   registerResult: RegisterResponse | null;
   loading: boolean;
   apiError?: string;
-  screen?: 'verifyEmail' | 'login';
+  screen?: 'splash' | 'welcome' | 'verifyEmail' | 'login';
   emailVerified: boolean;
   loginDestinations: import('./lib/types').LoginDestination[] | null;
 }
@@ -138,6 +140,7 @@ const INITIAL_STATE: UiState = {
   registerResult: null,
   loading: false,
   apiError: undefined,
+  screen: 'splash',
   emailVerified: false,
   loginDestinations: null,
 };
@@ -194,6 +197,13 @@ export function App() {
   }
 
   useEffect(() => stopResendTimer, []);
+
+  // Splash de marca: pasa sola a bienvenida tras un momento breve.
+  useEffect(() => {
+    if (state.screen !== 'splash') return;
+    const handle = setTimeout(() => patch({ screen: 'welcome' }), 1100);
+    return () => clearTimeout(handle);
+  }, [state.screen]);
 
   // Búsqueda de finca (trabajador, paso 3), con debounce de 300ms.
   useEffect(() => {
@@ -476,8 +486,10 @@ export function App() {
   }
 
   const { role, step } = state;
+  if (state.screen === 'splash') return <SplashPage onSkip={() => patch({ screen: 'welcome' })} />;
+  if (state.screen === 'welcome') return <AppShell><WelcomePage onRegister={() => patch({ screen: undefined })} onLogin={() => patch({ screen: 'login', apiError: undefined })} /></AppShell>;
   if (state.screen === 'verifyEmail') return <AppShell><VerifyEmailPage email={state.account.email} loading={state.loading} error={state.apiError} onVerify={(code) => void verifyEmail(code)} onResend={() => void beginEmailVerification()} onSkip={() => patch({ screen: undefined, step: 5 })} /></AppShell>;
-  if (state.screen === 'login') return <AppShell><LoginPage loading={state.loading} error={state.apiError} destinations={state.loginDestinations} onFind={(id) => void findLogin(id)} onRequest={(id, kind) => void sendLogin(id, kind)} onVerify={(id, code) => void login(id, code)} onBack={() => patch({ screen: undefined, loginDestinations: null })} /></AppShell>;
+  if (state.screen === 'login') return <AppShell><LoginPage loading={state.loading} error={state.apiError} destinations={state.loginDestinations} onFind={(id) => void findLogin(id)} onRequest={(id, kind) => void sendLogin(id, kind)} onVerify={(id, code) => void login(id, code)} onBack={() => patch({ screen: 'welcome', loginDestinations: null })} /></AppShell>;
   const totalSteps = totalStepsFor(role);
   const showWizard = step >= 1 && step <= totalSteps;
   const displayStep = Math.min(step, totalSteps);
@@ -566,7 +578,7 @@ export function App() {
   void transportOptions;
 
   function renderStepContent(): ReactNode {
-    if (step === 0) return <><RolePage onSelectRole={(r) => patch({ role: r, step: 1 })} /><Button variant="ghost" onClick={() => patch({ screen: 'login', apiError: undefined })}>Ya tengo cuenta</Button></>;
+    if (step === 0) return <RolePage onSelectRole={(r) => patch({ role: r, step: 1 })} />;
 
     if (step === 1 && role) {
       return (

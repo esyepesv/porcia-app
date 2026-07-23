@@ -2,10 +2,11 @@
 
 ## Qué es este proyecto
 
-Frontend web de **PorcIA** (asistente porcícola colombiano). **Alcance actual: SOLO el flujo de registro de usuarios y granjas** — un wizard multi-paso más un perfil de solo lectura. NO hay dashboard, ni gestión de granja, ni ninguna otra pantalla todavía; no las agregues sin spec aprobado.
+Frontend web de **PorcIA** (asistente porcícola colombiano). **Alcance actual: splash + bienvenida de entrada, y el flujo de registro de usuarios y granjas** — pantalla de marca, hub de bienvenida (iniciar sesión / registrarme), un wizard multi-paso más un perfil de solo lectura. NO hay dashboard, ni gestión de granja, ni ninguna otra pantalla todavía; no las agregues sin spec aprobado.
 
 ## Fuente de la verdad
 
+- **Entrada:** `pages/SplashPage.tsx` (marca, pasa sola a bienvenida) → `pages/WelcomePage.tsx` (hub: "Registrarme" entra al wizard, "Ya tengo cuenta" entra a `LoginPage`). Ver `backend/specs/012-web-entry-splash-bienvenida.md`.
 - **Diseño:** `design/Registro.dc.html` + design system en `design/ds/`. El wizard es: rol → cuenta → finca/búsqueda → equipo opcional → éxito → perfil. El OTP es opcional y posterior para verificar correo o iniciar sesión.
 - **Spec funcional:** `backend/specs/001-register-farm-and-user.md` (repo porcia-backend, en el mismo monorepo local `../backend/`). Ahí están los campos, las reglas y el manejo de errores. El flujo spec-first manda: nada se implementa sin spec aprobado.
 - **Diferencia deliberada con el diseño:** los botones "Editar" del perfil (paso 6) NO se implementan en v1 — el perfil es solo lectura (ver spec 001, "NO incluye v1").
