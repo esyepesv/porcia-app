@@ -25,8 +25,9 @@ export function StepHeader({ totalSteps, currentStep, title, subtitle }: StepHea
         ))}
       </div>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-        <span
+        <h1
           style={{
+            margin: 0,
             fontFamily: 'var(--font-display)',
             fontWeight: 600,
             fontSize: 22,
@@ -34,7 +35,7 @@ export function StepHeader({ totalSteps, currentStep, title, subtitle }: StepHea
           }}
         >
           {title}
-        </span>
+        </h1>
         <span
           style={{
             fontSize: 12,

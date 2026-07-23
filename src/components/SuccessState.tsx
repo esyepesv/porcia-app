@@ -40,8 +40,9 @@ export function SuccessState({ title, children }: SuccessStateProps) {
           }}
         />
       </div>
-      <span
+      <h1
         style={{
+          margin: 0,
           fontFamily: 'var(--font-display)',
           fontWeight: 600,
           fontSize: 22,
@@ -49,7 +50,7 @@ export function SuccessState({ title, children }: SuccessStateProps) {
         }}
       >
         {title}
-      </span>
+      </h1>
       <p
         style={{
           margin: 0,

@@ -48,7 +48,8 @@ button:focus-visible,
 /* Estados interactivos que no se pueden expresar con estilos inline. */
 
 .pia-btn--primary:hover:not(:disabled) {
-  background: var(--accent-soft);
+  /* Oscurece en vez de aclarar: --accent-soft bajaba el contraste del texto blanco todavía más. */
+  background: var(--accent-cta-hover);
 }
 .pia-btn--ghost:hover:not(:disabled) {
   border-color: var(--teal);
@@ -57,6 +58,26 @@ button:focus-visible,
 .pia-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.pia-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  opacity: 0.85;
+  animation: pia-spin 0.7s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pia-spinner {
+    animation-duration: 1.4s;
+  }
+}
+@keyframes pia-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .pia-pill:hover:not(.pia-pill--selected) {
@@ -71,6 +92,14 @@ button:focus-visible,
   border-color: var(--teal);
 }
 
+/* min-height 44px = touch target mínimo (WCAG); estos botones eran solo texto sin padding. */
+.pia-link-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 4px 6px;
+  margin: -4px -6px;
+}
 .pia-link-btn:hover:not(:disabled) {
   color: var(--teal-dark);
 }

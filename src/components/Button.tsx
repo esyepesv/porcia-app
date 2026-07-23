@@ -4,6 +4,7 @@ export type ButtonVariant = 'primary' | 'ghost';
 
 interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type'> {
   variant?: ButtonVariant;
+  loading?: boolean;
   children: ReactNode;
 }
 
@@ -24,7 +25,8 @@ const baseStyle: CSSProperties = {
 
 const variantStyles: Record<ButtonVariant, CSSProperties> = {
   primary: {
-    background: 'var(--accent)',
+    // --accent-cta (no --accent): con texto blanco cumple 4.5:1, --accent solo daba ~3.9:1.
+    background: 'var(--accent-cta)',
     color: '#fff',
     border: 'none',
     boxShadow: 'var(--shadow-soft)',
@@ -37,14 +39,25 @@ const variantStyles: Record<ButtonVariant, CSSProperties> = {
 };
 
 /** Botón de marca PorcIA: primario (terracota, CTA) o ghost (contorno). */
-export function Button({ variant = 'primary', className, style, children, ...rest }: ButtonProps) {
+export function Button({
+  variant = 'primary',
+  loading = false,
+  disabled,
+  className,
+  style,
+  children,
+  ...rest
+}: ButtonProps) {
   return (
     <button
       type="button"
       className={['pia-btn', `pia-btn--${variant}`, className].filter(Boolean).join(' ')}
       style={{ ...baseStyle, ...variantStyles[variant], ...style }}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
       {...rest}
     >
+      {loading ? <span className="pia-spinner" aria-hidden="true" /> : null}
       {children}
     </button>
   );

@@ -65,8 +65,9 @@ export function ProfilePage({
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
       <div>
         <div style={{ marginBottom: 16 }}>
-          <span
+          <h1
             style={{
+              margin: 0,
               fontFamily: 'var(--font-display)',
               fontWeight: 600,
               fontSize: 19,
@@ -74,7 +75,7 @@ export function ProfilePage({
             }}
           >
             Tu cuenta
-          </span>
+          </h1>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <Row label="Rol" value={isOwner ? 'Administrador/dueño' : 'Trabajador'} />
@@ -88,8 +89,9 @@ export function ProfilePage({
       {isOwner && farm ? (
         <div>
           <div style={{ marginBottom: 16 }}>
-            <span
+            <h2
               style={{
+                margin: 0,
                 fontFamily: 'var(--font-display)',
                 fontWeight: 600,
                 fontSize: 19,
@@ -97,7 +99,7 @@ export function ProfilePage({
               }}
             >
               Tu finca
-            </span>
+            </h2>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <Row label="Nombre" value={farm.name || '—'} />
@@ -139,8 +141,9 @@ export function ProfilePage({
 
       {!isOwner ? (
         <div>
-          <span
+          <h2
             style={{
+              margin: 0,
               fontFamily: 'var(--font-display)',
               fontWeight: 600,
               fontSize: 19,
@@ -148,7 +151,7 @@ export function ProfilePage({
             }}
           >
             Tu solicitud
-          </span>
+          </h2>
           <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <Row label="Finca" value={selectedFarmName ?? '—'} />
             <div

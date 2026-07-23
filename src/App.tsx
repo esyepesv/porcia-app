@@ -8,7 +8,11 @@ import {
   storeToken,
   submitRegistration,
   verifyOtp,
-  requestAccountEmailOtp, verifyAccountEmailOtp, getLoginDestinations, requestLoginOtp, verifyLoginOtp,
+  requestAccountEmailOtp,
+  verifyAccountEmailOtp,
+  getLoginDestinations,
+  requestLoginOtp,
+  verifyLoginOtp,
   type ApiError,
 } from './lib/api';
 import { toUserMessage } from './lib/errors';
@@ -146,7 +150,13 @@ const INITIAL_STATE: UiState = {
   loginDestinations: null,
 };
 
-function AppShell({ children }: { children: ReactNode }) { return <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 20 }}><Card>{children}</Card></div>; }
+function AppShell({ children }: { children: ReactNode }) {
+  return (
+    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 20 }}>
+      <Card>{children}</Card>
+    </div>
+  );
+}
 
 function totalStepsFor(role: Role | null): number {
   return role === 'worker' ? 2 : 3;
@@ -168,13 +178,42 @@ export function App() {
   }
 
   async function beginEmailVerification(): Promise<void> {
-    patch({ loading: true, apiError: undefined }); const result = await requestAccountEmailOtp(state.account.email); patch({ loading: false });
-    if (result.ok) patch({ screen: 'verifyEmail' }); else patch({ apiError: toUserMessage(result.error) });
+    patch({ loading: true, apiError: undefined });
+    const result = await requestAccountEmailOtp(state.account.email);
+    patch({ loading: false });
+    if (result.ok) patch({ screen: 'verifyEmail' });
+    else patch({ apiError: toUserMessage(result.error) });
   }
-  async function verifyEmail(code: string): Promise<void> { patch({ loading: true, apiError: undefined }); const result = await verifyAccountEmailOtp(state.account.email, code); patch({ loading: false }); if (result.ok) patch({ emailVerified: true, screen: undefined, step: 5 }); else patch({ apiError: toUserMessage(result.error) }); }
-  async function findLogin(identifier: string): Promise<void> { patch({ loading: true, apiError: undefined }); const result = await getLoginDestinations(identifier); patch({ loading: false, loginDestinations: result.ok ? result.data.destinations : null, apiError: result.ok ? undefined : toUserMessage(result.error) }); }
-  async function sendLogin(identifier: string, kind: OtpDestinationKind): Promise<void> { patch({ loading: true, apiError: undefined }); const result = await requestLoginOtp(identifier, kind); patch({ loading: false, apiError: result.ok ? undefined : toUserMessage(result.error) }); }
-  async function login(identifier: string, code: string): Promise<void> { patch({ loading: true, apiError: undefined }); const result = await verifyLoginOtp(identifier, code); patch({ loading: false }); if (result.ok) { storeToken(result.data.session.token); patch({ screen: undefined, step: 5, apiError: undefined }); } else patch({ apiError: toUserMessage(result.error) }); }
+  async function verifyEmail(code: string): Promise<void> {
+    patch({ loading: true, apiError: undefined });
+    const result = await verifyAccountEmailOtp(state.account.email, code);
+    patch({ loading: false });
+    if (result.ok) patch({ emailVerified: true, screen: undefined, step: 5 });
+    else patch({ apiError: toUserMessage(result.error) });
+  }
+  async function findLogin(identifier: string): Promise<void> {
+    patch({ loading: true, apiError: undefined });
+    const result = await getLoginDestinations(identifier);
+    patch({
+      loading: false,
+      loginDestinations: result.ok ? result.data.destinations : null,
+      apiError: result.ok ? undefined : toUserMessage(result.error),
+    });
+  }
+  async function sendLogin(identifier: string, kind: OtpDestinationKind): Promise<void> {
+    patch({ loading: true, apiError: undefined });
+    const result = await requestLoginOtp(identifier, kind);
+    patch({ loading: false, apiError: result.ok ? undefined : toUserMessage(result.error) });
+  }
+  async function login(identifier: string, code: string): Promise<void> {
+    patch({ loading: true, apiError: undefined });
+    const result = await verifyLoginOtp(identifier, code);
+    patch({ loading: false });
+    if (result.ok) {
+      storeToken(result.data.session.token);
+      patch({ screen: undefined, step: 5, apiError: undefined });
+    } else patch({ apiError: toUserMessage(result.error) });
+  }
 
   function stopResendTimer(): void {
     if (timerRef.current) {
@@ -353,7 +392,7 @@ export function App() {
       identificationNumber: state.account.identificationNumber.trim(),
       phone: toE164Phone(state.account.phone),
       channel: registerChannel,
-    email: trimmedEmail,
+      email: trimmedEmail,
     };
   }
 
@@ -522,9 +561,42 @@ export function App() {
 
   const { role, step } = state;
   if (state.screen === 'splash') return <SplashPage onSkip={() => patch({ screen: 'welcome' })} />;
-  if (state.screen === 'welcome') return <AppShell><WelcomePage onRegister={() => patch({ screen: undefined })} onLogin={() => patch({ screen: 'login', apiError: undefined })} /></AppShell>;
-  if (state.screen === 'verifyEmail') return <AppShell><VerifyEmailPage email={state.account.email} loading={state.loading} error={state.apiError} onVerify={(code) => void verifyEmail(code)} onResend={() => void beginEmailVerification()} onSkip={() => patch({ screen: undefined, step: 5 })} /></AppShell>;
-  if (state.screen === 'login') return <AppShell><LoginPage loading={state.loading} error={state.apiError} destinations={state.loginDestinations} onFind={(id) => void findLogin(id)} onRequest={(id, kind) => void sendLogin(id, kind)} onVerify={(id, code) => void login(id, code)} onBack={() => patch({ screen: 'welcome', loginDestinations: null })} /></AppShell>;
+  if (state.screen === 'welcome')
+    return (
+      <AppShell>
+        <WelcomePage
+          onRegister={() => patch({ screen: undefined })}
+          onLogin={() => patch({ screen: 'login', apiError: undefined })}
+        />
+      </AppShell>
+    );
+  if (state.screen === 'verifyEmail')
+    return (
+      <AppShell>
+        <VerifyEmailPage
+          email={state.account.email}
+          loading={state.loading}
+          error={state.apiError}
+          onVerify={(code) => void verifyEmail(code)}
+          onResend={() => void beginEmailVerification()}
+          onSkip={() => patch({ screen: undefined, step: 5 })}
+        />
+      </AppShell>
+    );
+  if (state.screen === 'login')
+    return (
+      <AppShell>
+        <LoginPage
+          loading={state.loading}
+          error={state.apiError}
+          destinations={state.loginDestinations}
+          onFind={(id) => void findLogin(id)}
+          onRequest={(id, kind) => void sendLogin(id, kind)}
+          onVerify={(id, code) => void login(id, code)}
+          onBack={() => patch({ screen: 'welcome', loginDestinations: null })}
+        />
+      </AppShell>
+    );
   const totalSteps = totalStepsFor(role);
   const showWizard = step >= 1 && step <= totalSteps;
   const displayStep = Math.min(step, totalSteps);
@@ -569,10 +641,6 @@ export function App() {
     2: isWorker ? 'Enviar solicitud' : 'Continuar',
     3: 'Finalizar registro',
   };
-
-  const primaryDisabled =
-    state.loading ||
-    (step === 2 && isWorker && !state.selectedFarm);
 
   function otpIntroNode(): ReactNode {
     const transport = state.selectedTransport;
@@ -735,7 +803,7 @@ export function App() {
   }
 
   return (
-    <div
+    <main
       style={{
         minHeight: '100vh',
         display: 'flex',
@@ -774,7 +842,7 @@ export function App() {
         </div>
       </div>
 
-      <div style={{ width: '100%', maxWidth: containerWidth }}>
+      <section style={{ width: '100%', maxWidth: containerWidth }}>
         {showWizard ? (
           <StepHeader
             totalSteps={totalSteps}
@@ -786,8 +854,9 @@ export function App() {
 
         {step === 0 ? (
           <div style={{ marginBottom: 14, textAlign: 'center' }}>
-            <span
+            <h1
               style={{
+                margin: 0,
                 fontFamily: 'var(--font-display)',
                 fontWeight: 600,
                 fontSize: 24,
@@ -795,7 +864,7 @@ export function App() {
               }}
             >
               ¿Cómo te unes a PorcIA?
-            </span>
+            </h1>
             <p
               style={{
                 margin: '8px 0 0',
@@ -831,14 +900,19 @@ export function App() {
                 ) : (
                   <span />
                 )}
-                <Button variant="primary" onClick={handlePrimaryAction} disabled={primaryDisabled}>
+                <Button
+                  variant="primary"
+                  onClick={handlePrimaryAction}
+                  loading={state.loading}
+                  disabled={step === 2 && isWorker && !state.selectedFarm}
+                >
                   {primaryLabels[step] ?? 'Continuar'}
                 </Button>
               </div>
             ) : null}
           </div>
         </Card>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

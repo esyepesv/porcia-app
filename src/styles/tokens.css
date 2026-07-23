@@ -15,6 +15,10 @@
   --accent: #c86446;
   --accent-soft: #db8a63;
   --accent-ink: #ac4a2b;
+  /* Fondo de CTA primario: --accent con texto blanco da ~3.9:1 (falla AA a 15px/700).
+     --accent-cta es el mismo tono oscurecido para cumplir 4.5:1. */
+  --accent-cta: #b0583e;
+  --accent-cta-hover: #9a4b34;
   --olive: #6e7a3e;
   --tan: #e7dcc8;
   --brown: #8a5a33;
@@ -27,7 +31,8 @@
   --cream: #f4efea;
   --white: #ffffff;
   --text-body: rgba(44, 53, 49, 0.68);
-  --text-muted: rgba(44, 53, 49, 0.5);
+  /* .5 daba ~2.85:1 sobre fondo claro (falla AA 4.5:1); .68 iguala --text-body, que sí cumple. */
+  --text-muted: rgba(44, 53, 49, 0.68);
   --text-faint: rgba(44, 53, 49, 0.45);
   --text-on-dark: rgba(244, 239, 234, 0.75);
   --text-on-dark-muted: rgba(244, 239, 234, 0.5);

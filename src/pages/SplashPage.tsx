@@ -21,9 +21,14 @@ export function SplashPage({ onSkip }: SplashPageProps) {
         cursor: 'pointer',
       }}
     >
-      <img src="/porcia-mark.png" alt="PorcIA" style={{ width: 72, height: 72, objectFit: 'contain' }} />
-      <span
+      <img
+        src="/porcia-mark.png"
+        alt="PorcIA"
+        style={{ width: 72, height: 72, objectFit: 'contain' }}
+      />
+      <h1
         style={{
+          margin: 0,
           fontFamily: 'var(--font-display)',
           fontWeight: 600,
           fontSize: 28,
@@ -31,7 +36,7 @@ export function SplashPage({ onSkip }: SplashPageProps) {
         }}
       >
         PorcIA
-      </span>
+      </h1>
       <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--text-on-dark)' }}>
         Tu asistente porcícola
       </span>

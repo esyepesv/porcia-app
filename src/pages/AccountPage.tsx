@@ -19,7 +19,7 @@ const ID_OPTIONS: { value: IdentificationType; label: string }[] = [
   { value: 'PA', label: 'Pasaporte' },
 ];
 
-/** Paso 1 — cuenta: tipo de identificación, número, celular y correo opcional. */
+/** Paso 1 — cuenta: tipo de identificación, número, celular y correo. */
 export function AccountPage({ value, errors, role, onChange }: AccountPageProps) {
   const roleHint =
     role === 'owner'
@@ -55,7 +55,7 @@ export function AccountPage({ value, errors, role, onChange }: AccountPageProps)
       />
 
       <Input
-        label="Correo electrónico (opcional)"
+        label="Correo electrónico"
         type="email"
         placeholder="tucorreo@ejemplo.com"
         value={value.email}
