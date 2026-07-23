@@ -7,7 +7,15 @@ export function toUserMessage(error: ApiError): string {
   }
 
   if (error.kind === 'unknown') {
-    return 'Algo salió mal de nuestro lado. Inténtalo de nuevo en un momento.';
+    // El backend redacta sus mensajes en español y con el tono de marca; si
+    // vino uno, se prefiere al genérico.
+    return error.message ?? 'Algo salió mal de nuestro lado. Inténtalo de nuevo en un momento.';
+  }
+
+  // Los errores de validación traen el campo exacto que falló ("El celular
+  // debe ser colombiano…"); repetirlos aquí sería mantener dos copias.
+  if (error.code === 'validation' && error.message !== undefined) {
+    return error.message;
   }
 
   switch (error.code) {
@@ -26,7 +34,11 @@ export function toUserMessage(error: ApiError): string {
     case 'not_found':
       return 'Ese código ya no es válido. Pide uno nuevo.';
     case 'duplicate_identification':
-      return 'Ya existe una cuenta con esa identificación.';
+      return 'Ya existe una cuenta con ese documento. Si es tuya, inicia sesión.';
+    case 'duplicate_email':
+      return 'Ya existe una cuenta con ese correo. Si es tuya, inicia sesión.';
+    case 'unauthorized':
+      return 'Tu sesión venció. Vuelve a iniciar sesión.';
     case 'duplicate_farm':
       return 'Esa finca ya está registrada en tu cuenta.';
     case 'already_member':

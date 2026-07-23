@@ -1,5 +1,8 @@
 import type {
+  AvailabilityResponse,
   FarmSearchResponse,
+  IdentificationType,
+  MeResponse,
   OtpDestinationKind,
   OtpTransport,
   OtpTransportsResponse,
@@ -23,16 +26,18 @@ export type ApiErrorCode =
   | 'too_many_attempts'
   | 'not_found'
   | 'duplicate_identification'
+  | 'duplicate_email'
   | 'duplicate_farm'
   | 'already_member'
   | 'phone_not_verified'
+  | 'unauthorized'
   | 'validation'
   | 'farm_not_found';
 
 export type ApiError =
   | { kind: 'network' }
-  | { kind: 'api'; code: ApiErrorCode; status: number; field?: string }
-  | { kind: 'unknown'; status: number };
+  | { kind: 'api'; code: ApiErrorCode; status: number; field?: string; message?: string }
+  | { kind: 'unknown'; status: number; message?: string };
 
 export type ApiResult<T> = { ok: true; data: T } | { ok: false; error: ApiError };
 
@@ -45,9 +50,11 @@ const KNOWN_CODES = new Set<string>([
   'too_many_attempts',
   'not_found',
   'duplicate_identification',
+  'duplicate_email',
   'duplicate_farm',
   'already_member',
   'phone_not_verified',
+  'unauthorized',
   'validation',
   'farm_not_found',
 ]);
@@ -56,13 +63,29 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
+/**
+ * El backend responde `{ error: { code, message } }` — `body.error` es un
+ * OBJETO. Antes esto solo miraba formas planas (`body.error` como string),
+ * así que el código NUNCA se reconocía y todo error terminaba como
+ * "unknown": la validación de duplicados existía en el servidor pero en
+ * pantalla siempre salía "Algo salió mal de nuestro lado".
+ */
 function extractCode(body: unknown): ApiErrorCode | undefined {
   if (!isRecord(body)) return undefined;
-  const candidate = body.error ?? body.code;
+  const nested = isRecord(body.error) ? body.error.code : undefined;
+  const candidate = nested ?? body.error ?? body.code;
   if (typeof candidate === 'string' && KNOWN_CODES.has(candidate)) {
     return candidate as ApiErrorCode;
   }
   return undefined;
+}
+
+/** Mensaje en español que ya redactó el backend, para no duplicarlo aquí. */
+function extractMessage(body: unknown): string | undefined {
+  if (!isRecord(body)) return undefined;
+  const nested = isRecord(body.error) ? body.error.message : undefined;
+  const candidate = nested ?? body.message;
+  return typeof candidate === 'string' && candidate.trim().length > 0 ? candidate : undefined;
 }
 
 function extractField(body: unknown): string | undefined {
@@ -88,6 +111,14 @@ export function storeToken(token: string): void {
   } catch {
     // localStorage puede no estar disponible (modo privado); la sesión
     // simplemente no persiste entre recargas, el registro sigue funcionando.
+  }
+}
+
+export function clearToken(): void {
+  try {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+  } catch {
+    // Igual que storeToken: si no hay localStorage, no hay nada que borrar.
   }
 }
 
@@ -119,13 +150,20 @@ async function request<T>(path: string, init?: RequestInit): Promise<ApiResult<T
   }
 
   const code = extractCode(body);
+  const message = extractMessage(body);
   if (code) {
     return {
       ok: false,
-      error: { kind: 'api', code, status: response.status, field: extractField(body) },
+      error: {
+        kind: 'api',
+        code,
+        status: response.status,
+        field: extractField(body),
+        message,
+      },
     };
   }
-  return { ok: false, error: { kind: 'unknown', status: response.status } };
+  return { ok: false, error: { kind: 'unknown', status: response.status, message } };
 }
 
 export function getOtpTransports(): Promise<ApiResult<OtpTransportsResponse>> {
@@ -183,4 +221,22 @@ export function requestLoginOtp(identifier: string, destinationKind: OtpDestinat
 
 export function verifyLoginOtp(identifier: string, code: string): Promise<ApiResult<LoginResponse>> {
   return request<LoginResponse>('/auth/verify-otp', { method: 'POST', body: JSON.stringify({ identifier, code }) });
+}
+
+/** Perfil de la sesión guardada; 401 si el token ya no sirve. */
+export function getMe(): Promise<ApiResult<MeResponse>> {
+  return request<MeResponse>('/account/me');
+}
+
+/**
+ * ¿Está libre esta identificación / este correo? Va por POST para no dejar
+ * cédulas ni correos en la URL (y por tanto en los registros de acceso).
+ */
+export function checkAvailability(
+  input: { identificationType: IdentificationType; identificationNumber: string } | { email: string },
+): Promise<ApiResult<AvailabilityResponse>> {
+  return request<AvailabilityResponse>('/register/check-availability', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
 }

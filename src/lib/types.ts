@@ -131,3 +131,39 @@ export interface RegisterResponse {
     expiresInSeconds: number;
   };
 }
+
+export interface AvailabilityResponse {
+  available: boolean;
+}
+
+export interface MeFarm {
+  farmId: string;
+  name: string;
+  legalType: LegalType;
+  taxIdType: TaxIdType;
+  taxId: string;
+  location: string;
+  cebaCapacity: number;
+  breedingCapacity: number;
+  totalCapacity: number;
+  sanitaryRegistry: string;
+  role: 'administrador_dueno' | 'trabajador';
+  membershipStatus: MembershipStatus;
+}
+
+/**
+ * Perfil de la sesión (GET /account/me). El celular NO viene: el backend
+ * solo guarda su HMAC, nunca el número en claro.
+ */
+export interface MeResponse {
+  user: {
+    id: string;
+    identificationType: IdentificationType;
+    identificationNumber: string;
+    email: string;
+    displayName?: string;
+    emailVerified: boolean;
+    phoneVerified: boolean;
+  };
+  farms: MeFarm[];
+}

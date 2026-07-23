@@ -2,7 +2,11 @@ import type { ReactNode } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { usePostHog } from '@posthog/react';
 import {
+  checkAvailability,
+  clearToken,
+  getMe,
   getOtpTransports,
+  getStoredToken,
   requestOtp,
   searchFarms,
   storeToken,
@@ -22,6 +26,8 @@ import type {
   FarmFormState,
   FarmSearchResult,
   FieldErrors,
+  MembershipStatus,
+  MeResponse,
   OtpDestinationKind,
   OtpTransport,
   RegisterFarmPayload,
@@ -121,6 +127,13 @@ interface UiState {
   screen?: 'splash' | 'welcome' | 'verifyEmail' | 'login';
   emailVerified: boolean;
   loginDestinations: import('./lib/types').LoginDestination[] | null;
+  // Restaurando la sesión guardada al arrancar: evita el parpadeo del splash
+  // antes de saber si hay que mostrar el perfil.
+  restoring: boolean;
+  // El perfil viene de /account/me tras recargar o iniciar sesión; el celular
+  // no está disponible ahí (solo se guarda hasheado).
+  phoneKnown: boolean;
+  membershipStatus?: MembershipStatus;
 }
 
 const INITIAL_STATE: UiState = {
@@ -148,6 +161,8 @@ const INITIAL_STATE: UiState = {
   screen: 'splash',
   emailVerified: false,
   loginDestinations: null,
+  restoring: getStoredToken() !== null,
+  phoneKnown: true,
 };
 
 function AppShell({ children }: { children: ReactNode }) {
@@ -166,6 +181,11 @@ let workerUidCounter = 0;
 function nextWorkerId(): string {
   workerUidCounter += 1;
   return `w${workerUidCounter}`;
+}
+
+/** Borra el error de los campos que la persona acaba de reescribir. */
+function blankErrorsFor(fields: Partial<AccountFormState>): FieldErrors {
+  return Object.fromEntries(Object.keys(fields).map((key) => [key, undefined]));
 }
 
 export function App() {
@@ -208,11 +228,90 @@ export function App() {
   async function login(identifier: string, code: string): Promise<void> {
     patch({ loading: true, apiError: undefined });
     const result = await verifyLoginOtp(identifier, code);
+    if (!result.ok) {
+      patch({ loading: false, apiError: toUserMessage(result.error) });
+      return;
+    }
+    storeToken(result.data.session.token);
+    // Sin este paso el perfil salía EN BLANCO: se saltaba al paso 5 con el
+    // estado del wizard vacío (role null incluido), así que no se pintaba nada.
+    const me = await getMe();
     patch({ loading: false });
-    if (result.ok) {
-      storeToken(result.data.session.token);
-      patch({ screen: undefined, step: 5, apiError: undefined });
-    } else patch({ apiError: toUserMessage(result.error) });
+    if (me.ok) {
+      applyProfile(me.data);
+    } else {
+      patch({ apiError: toUserMessage(me.error) });
+    }
+  }
+
+  /** Vuelca el perfil del servidor en el estado y aterriza en la pantalla de perfil. */
+  function applyProfile(me: MeResponse): void {
+    const farm = me.farms[0];
+    const isOwner = farm?.role === 'administrador_dueno';
+    patch({
+      screen: undefined,
+      step: 5,
+      role: isOwner ? 'owner' : 'worker',
+      apiError: undefined,
+      restoring: false,
+      emailVerified: me.user.emailVerified,
+      phoneKnown: false,
+      membershipStatus: farm?.membershipStatus,
+      account: {
+        identificationType: me.user.identificationType,
+        identificationNumber: me.user.identificationNumber,
+        phone: '',
+        email: me.user.email,
+      },
+      selectedFarm: farm && !isOwner ? { id: farm.farmId, name: farm.name, location: farm.location, adminName: '' } : null,
+      farm: farm
+        ? {
+            name: farm.name,
+            legalType: farm.legalType,
+            taxId: farm.taxId,
+            location: farm.location,
+            cebaCapacity: String(farm.cebaCapacity),
+            breedingCapacity: String(farm.breedingCapacity),
+            totalCapacity: String(farm.totalCapacity),
+            sanitaryRegistry: farm.sanitaryRegistry,
+          }
+        : INITIAL_FARM,
+    });
+  }
+
+  /**
+   * Aviso temprano de duplicado al salir del campo. Es comodidad, no la
+   * defensa: quien manda es la comprobación del servidor al registrar.
+   */
+  async function checkFieldAvailability(field: 'identificationNumber' | 'email'): Promise<void> {
+    const value =
+      field === 'email' ? state.account.email.trim() : state.account.identificationNumber.trim();
+    if (value.length === 0) return;
+    if (field === 'email' && !value.includes('@')) return;
+
+    const result = await checkAvailability(
+      field === 'email'
+        ? { email: value }
+        : {
+            identificationType: state.account.identificationType,
+            identificationNumber: value,
+          },
+    );
+    if (!result.ok || result.data.available) return;
+    patch((s) => ({
+      accountErrors: {
+        ...s.accountErrors,
+        [field]:
+          field === 'email'
+            ? 'Ya existe una cuenta con ese correo. Si es tuya, inicia sesión.'
+            : 'Ya existe una cuenta con ese documento. Si es tuya, inicia sesión.',
+      },
+    }));
+  }
+
+  function logout(): void {
+    clearToken();
+    setState({ ...INITIAL_STATE, screen: 'welcome', restoring: false });
   }
 
   function stopResendTimer(): void {
@@ -239,12 +338,76 @@ export function App() {
 
   useEffect(() => stopResendTimer, []);
 
+  // Sesión guardada: al arrancar se trae el perfil real del servidor. Antes
+  // el token se guardaba pero nadie lo leía, así que recargar la página
+  // devolvía a la pantalla inicial como si nunca se hubiera entrado.
+  useEffect(() => {
+    if (getStoredToken() === null) return;
+    let cancelled = false;
+    void (async () => {
+      const me = await getMe();
+      if (cancelled) return;
+      if (me.ok) {
+        applyProfile(me.data);
+        return;
+      }
+      // Token vencido o inválido: se descarta y se sigue el arranque normal.
+      clearToken();
+      patch({ restoring: false });
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Solo al montar: es la restauración inicial de la sesión.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Splash de marca: pasa sola a bienvenida tras un momento breve.
   useEffect(() => {
-    if (state.screen !== 'splash') return;
+    if (state.screen !== 'splash' || state.restoring) return;
     const handle = setTimeout(() => patch({ screen: 'welcome' }), 1100);
     return () => clearTimeout(handle);
-  }, [state.screen]);
+  }, [state.screen, state.restoring]);
+
+  // ── Historial del navegador ────────────────────────────────────────────
+  // La app es una sola página con máquina de estados, sin rutas. Sin esto el
+  // botón "atrás" (y el botón físico de Android) sacaba del sitio en vez de
+  // retroceder un paso. Se guarda la vista en `history.state` y se aplica de
+  // vuelta al recibir `popstate`, sin necesidad de un router.
+  const poppingRef = useRef(false);
+
+  useEffect(() => {
+    function onPopState(event: PopStateEvent): void {
+      const view = (event.state as { view?: string } | null)?.view;
+      if (view === undefined) return;
+      poppingRef.current = true;
+      if (view.startsWith('step:')) {
+        patch({ screen: undefined, step: Number(view.slice(5)), apiError: undefined });
+      } else {
+        patch({ screen: view as UiState['screen'], apiError: undefined });
+      }
+    }
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  const currentView = state.screen ?? `step:${state.step}`;
+  useEffect(() => {
+    if (poppingRef.current) {
+      poppingRef.current = false;
+      return;
+    }
+    const previous = (window.history.state as { view?: string } | null)?.view;
+    if (previous === currentView) return;
+    // Éxito y perfil son finales: se reemplaza en vez de apilar para que
+    // "atrás" no devuelva al formulario de un registro ya completado.
+    const terminal = state.step >= 4 && state.screen === undefined;
+    if (previous === undefined || terminal) {
+      window.history.replaceState({ view: currentView }, '');
+    } else {
+      window.history.pushState({ view: currentView }, '');
+    }
+  }, [currentView, state.step, state.screen]);
 
   // Búsqueda de finca (trabajador, paso 3), con debounce de 300ms.
   useEffect(() => {
@@ -396,19 +559,41 @@ export function App() {
     };
   }
 
+  /**
+   * Devuelve a la persona al paso donde está el dato que chocó, con el error
+   * bajo el campo. Antes todo esto era invisible: el código del backend se
+   * perdía al parsear la respuesta y solo salía "Algo salió mal".
+   */
   function handleRegisterError(error: ApiError): void {
     posthog?.capture('registration_failed', {
       reason: error.kind === 'api' ? error.code : error.kind,
       role: state.role,
     });
-    if (error.kind === 'api' && error.code === 'phone_not_verified') {
-      patch({
-        step: 2,
-        apiError: 'Necesitamos verificar tu contacto de nuevo antes de continuar.',
-      });
+    const message = toUserMessage(error);
+    if (error.kind !== 'api') {
+      patch({ apiError: message });
       return;
     }
-    patch({ apiError: toUserMessage(error) });
+    switch (error.code) {
+      case 'duplicate_identification':
+        patch({ step: 1, accountErrors: { identificationNumber: message }, apiError: message });
+        return;
+      case 'duplicate_email':
+        patch({ step: 1, accountErrors: { email: message }, apiError: message });
+        return;
+      case 'duplicate_farm':
+        patch({ step: 2, farmErrors: { name: message }, apiError: message });
+        return;
+      case 'already_member':
+      case 'farm_not_found':
+        patch({ step: 2, selectedFarm: null, apiError: message });
+        return;
+      case 'phone_not_verified':
+        patch({ step: 1, accountErrors: { phone: message }, apiError: message });
+        return;
+      default:
+        patch({ apiError: message });
+    }
   }
 
   function handleContinueAccount(): void {
@@ -520,6 +705,12 @@ export function App() {
 
   function handleGoBack(): void {
     if (state.step === 2) stopResendTimer();
+    // Desde la elección de rol (paso 0) el "atrás" natural es la bienvenida:
+    // antes ese paso no tenía salida y quedaba encerrado en el registro.
+    if (state.step === 0) {
+      patch({ screen: 'welcome', apiError: undefined });
+      return;
+    }
     patch((s) => ({
       step: Math.max(0, s.step - 1),
       accountErrors: {},
@@ -560,6 +751,9 @@ export function App() {
   }
 
   const { role, step } = state;
+  // Mientras se restaura la sesión se mantiene el splash: así no se ve la
+  // bienvenida un instante para saltar enseguida al perfil.
+  if (state.restoring) return <SplashPage onSkip={() => undefined} />;
   if (state.screen === 'splash') return <SplashPage onSkip={() => patch({ screen: 'welcome' })} />;
   if (state.screen === 'welcome')
     return (
@@ -697,7 +891,14 @@ export function App() {
           value={state.account}
           errors={state.accountErrors}
           role={role}
-          onChange={(fields) => patch((s) => ({ account: { ...s.account, ...fields } }))}
+          onChange={(fields) =>
+            patch((s) => ({
+              account: { ...s.account, ...fields },
+              // Al reescribir el campo se limpia el aviso de duplicado.
+              accountErrors: { ...s.accountErrors, ...blankErrorsFor(fields) },
+            }))
+          }
+          onCheckField={(field) => void checkFieldAvailability(field)}
         />
       );
     }
@@ -792,9 +993,11 @@ export function App() {
           }
           workers={state.workers}
           selectedFarmName={state.selectedFarm?.name}
-          membershipStatus={state.registerResult?.membershipStatus}
+          membershipStatus={state.registerResult?.membershipStatus ?? state.membershipStatus}
           emailVerified={state.emailVerified}
+          phoneKnown={state.phoneKnown}
           onVerifyEmail={() => void beginEmailVerification()}
+          onLogout={logout}
         />
       );
     }
@@ -883,6 +1086,14 @@ export function App() {
             {renderStepContent()}
 
             {state.apiError ? <ErrorBanner message={state.apiError} /> : null}
+
+            {/* El paso 0 no forma parte del wizard numerado, pero también
+                necesita salida: antes era un callejón sin retorno. */}
+            {step === 0 ? (
+              <Button variant="ghost" onClick={handleGoBack} style={{ alignSelf: 'flex-start' }}>
+                Atrás
+              </Button>
+            ) : null}
 
             {showWizard ? (
               <div

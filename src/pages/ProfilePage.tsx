@@ -1,3 +1,4 @@
+import { Button } from '../components/Button';
 import type { MembershipStatus, Role, WorkerDraft } from '../lib/types';
 
 interface ProfileFarmData {
@@ -23,7 +24,10 @@ interface ProfilePageProps {
   selectedFarmName?: string;
   membershipStatus?: MembershipStatus;
   emailVerified: boolean;
+  /** El celular solo se guarda hasheado: tras recargar no hay número que mostrar. */
+  phoneKnown?: boolean;
   onVerifyEmail: () => void;
+  onLogout?: () => void;
 }
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -57,7 +61,9 @@ export function ProfilePage({
   selectedFarmName,
   membershipStatus,
   emailVerified,
+  phoneKnown = true,
   onVerifyEmail,
+  onLogout,
 }: ProfilePageProps) {
   const isOwner = role === 'owner';
 
@@ -81,8 +87,30 @@ export function ProfilePage({
           <Row label="Rol" value={isOwner ? 'Administrador/dueño' : 'Trabajador'} />
           <Row label="Tipo de identificación" value={identificationTypeLabel} />
           <Row label="Identificación" value={identificationNumber || '—'} />
-          <Row label="Celular (WhatsApp)" value={phone || '—'} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><div style={{ flex: 1 }}><Row label="Correo electrónico" value={email || '—'} /></div><span style={{ fontSize: 12, color: emailVerified ? 'var(--teal)' : 'var(--text-muted)' }}>{emailVerified ? 'Verificado' : 'Sin verificar'}</span>{!emailVerified ? <button type="button" onClick={onVerifyEmail} className="pia-link-btn" style={{ border: 0, background: 'none', color: 'var(--teal)', cursor: 'pointer' }}>Reenviar</button> : null}</div>
+          <Row
+            label="Celular (WhatsApp)"
+            value={phone || (phoneKnown ? '—' : 'Guardado de forma segura')}
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ flex: 1 }}>
+              <Row label="Correo electrónico" value={email || '—'} />
+            </div>
+            <span
+              style={{ fontSize: 12, color: emailVerified ? 'var(--teal)' : 'var(--text-muted)' }}
+            >
+              {emailVerified ? 'Verificado' : 'Sin verificar'}
+            </span>
+            {!emailVerified ? (
+              <button
+                type="button"
+                onClick={onVerifyEmail}
+                className="pia-link-btn"
+                style={{ border: 0, background: 'none', color: 'var(--teal)', cursor: 'pointer' }}
+              >
+                Reenviar
+              </button>
+            ) : null}
+          </div>
         </div>
       </div>
 
@@ -179,6 +207,12 @@ export function ProfilePage({
             </div>
           </div>
         </div>
+      ) : null}
+
+      {onLogout ? (
+        <Button variant="ghost" onClick={onLogout} style={{ alignSelf: 'center' }}>
+          Cerrar sesión
+        </Button>
       ) : null}
     </div>
   );

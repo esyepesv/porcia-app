@@ -8,6 +8,12 @@ interface AccountPageProps {
   errors: FieldErrors;
   role: Role;
   onChange: (patch: Partial<AccountFormState>) => void;
+  /**
+   * Consulta si el documento o el correo ya están registrados. Se dispara al
+   * SALIR del campo (no en cada tecla): así se avisa antes de llenar tres
+   * pasos, sin una petición por pulsación.
+   */
+  onCheckField?: (field: 'identificationNumber' | 'email') => void;
 }
 
 const ID_OPTIONS: { value: IdentificationType; label: string }[] = [
@@ -20,7 +26,7 @@ const ID_OPTIONS: { value: IdentificationType; label: string }[] = [
 ];
 
 /** Paso 1 — cuenta: tipo de identificación, número, celular y correo. */
-export function AccountPage({ value, errors, role, onChange }: AccountPageProps) {
+export function AccountPage({ value, errors, role, onChange, onCheckField }: AccountPageProps) {
   const roleHint =
     role === 'owner'
       ? 'Te registras como Administrador/dueño de la cuenta. Podrás invitar trabajadores más adelante.'
@@ -41,7 +47,10 @@ export function AccountPage({ value, errors, role, onChange }: AccountPageProps)
         placeholder="Ej. 1032456789"
         value={value.identificationNumber}
         error={errors.identificationNumber}
-        onChange={(e) => onChange({ identificationNumber: sanitizeIdentificationInput(e.target.value) })}
+        onBlur={() => onCheckField?.('identificationNumber')}
+        onChange={(e) =>
+          onChange({ identificationNumber: sanitizeIdentificationInput(e.target.value) })
+        }
       />
 
       <Input
@@ -60,6 +69,7 @@ export function AccountPage({ value, errors, role, onChange }: AccountPageProps)
         placeholder="tucorreo@ejemplo.com"
         value={value.email}
         error={errors.email}
+        onBlur={() => onCheckField?.('email')}
         onChange={(e) => onChange({ email: e.target.value })}
       />
 
