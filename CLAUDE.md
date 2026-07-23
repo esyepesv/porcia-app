@@ -13,7 +13,7 @@ Frontend web de **PorcIA** (asistente porcícola colombiano). **Alcance actual: 
 ## Stack y estructura
 
 - Vite + React 18 + TypeScript `strict`. Deploy en Vercel (proyecto separado del backend).
-- Validación con zod, espejando los enums/formatos del backend: tipo de identificación `CC|CE|PA`, tipo de persona `natural|juridica`, celular colombiano (10 dígitos, empieza por 3), capacidades numéricas positivas.
+- Validación con zod, espejando los enums/formatos del backend: tipo de identificación `TI|CC|CE|PPT|PEP|PA`, tipo de persona `natural|juridica`, celular colombiano (10 dígitos, empieza por 3), capacidades numéricas positivas.
 - `VITE_API_BASE_URL` apunta al backend: en local `http://localhost:3000` (rutas `/register/*`), en producción el dominio de Vercel del backend (rutas `/api/register/*`). Nunca hardcodear la base.
 - Sesión: el JWT que devuelve `POST /register` se guarda en `localStorage` y se envía como `Authorization: Bearer`.
 

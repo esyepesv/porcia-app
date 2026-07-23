@@ -3,7 +3,7 @@ import { z } from 'zod';
 // Validaciones espejo de las reglas del backend (spec 001).
 // Los mensajes de error se muestran tal cual bajo cada campo.
 
-export const identificationTypeSchema = z.enum(['CC', 'CE', 'PA']);
+export const identificationTypeSchema = z.enum(['TI', 'CC', 'CE', 'PPT', 'PEP', 'PA']);
 export const legalTypeSchema = z.enum(['natural', 'juridica']);
 
 export const phoneSchema = z
@@ -120,6 +120,11 @@ export function sanitizePhoneInput(raw: string): string {
 /** Filtra a solo dígitos, sin cortar longitud (identificaciones, capacidades). */
 export function sanitizeDigitsInput(raw: string): string {
   return raw.replace(/\D/g, '');
+}
+
+/** Admite números y letras para documentos como pasaporte, sin espacios. */
+export function sanitizeIdentificationInput(raw: string): string {
+  return raw.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 }
 
 /** Formatea un celular colombiano de 10 dígitos para mostrarlo: "300 123 4567". */

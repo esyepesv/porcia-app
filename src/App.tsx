@@ -54,8 +54,11 @@ import { TeamPage } from './pages/TeamPage';
 void OtpPage;
 
 const ID_LABELS: Record<AccountFormState['identificationType'], string> = {
+  TI: 'Tarjeta de Identidad',
   CC: 'Cédula de ciudadanía',
   CE: 'Cédula de extranjería',
+  PPT: 'Permiso por Protección Temporal',
+  PEP: 'Permiso Especial de Permanencia',
   PA: 'Pasaporte',
 };
 

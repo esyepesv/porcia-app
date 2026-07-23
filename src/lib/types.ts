@@ -2,7 +2,8 @@
 // Nombres de campos en inglés (convención de código); copy visible en español.
 
 export type Role = 'owner' | 'worker';
-export type IdentificationType = 'CC' | 'CE' | 'PA';
+// Debe coincidir con el enum `public.identification_type` del backend.
+export type IdentificationType = 'TI' | 'CC' | 'CE' | 'PPT' | 'PEP' | 'PA';
 export type LegalType = 'natural' | 'juridica';
 export type TaxIdType = 'cedula' | 'nit';
 export type Channel = 'whatsapp' | 'telegram';

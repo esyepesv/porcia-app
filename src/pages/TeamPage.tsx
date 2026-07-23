@@ -62,7 +62,7 @@ export function TeamPage({ workers, errors, onAdd, onRemove, onChange }: TeamPag
             />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <Input
-                label="Cédula"
+                label="Documento de identidad"
                 placeholder="Número"
                 value={worker.identificationNumber}
                 error={workerErrors.identificationNumber}

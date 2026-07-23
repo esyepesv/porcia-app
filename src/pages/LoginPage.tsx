@@ -8,7 +8,7 @@ export function LoginPage({ loading, error, destinations, onFind, onRequest, onV
   const [identifier, setIdentifier] = useState(''); const [code, setCode] = useState(['', '', '', '', '', '']);
   return <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
     <h2 style={{ margin: 0, fontFamily: 'var(--font-display)', color: 'var(--ink)' }}>Inicia sesión</h2>
-    <label style={{ display: 'grid', gap: 6 }}>Cédula o correo<input value={identifier} onChange={(e) => setIdentifier(e.target.value)} /></label>
+    <label style={{ display: 'grid', gap: 6 }}>Documento de identidad o correo<input value={identifier} onChange={(e) => setIdentifier(e.target.value)} /></label>
     {!destinations ? <Button variant="primary" disabled={loading || !identifier.trim()} onClick={() => onFind(identifier)}>Continuar</Button> : <>
       <p style={{ margin: 0, color: 'var(--text-body)' }}>Elige dónde recibir tu código.</p>
       {destinations.map((d) => <Button key={`${d.kind}-${d.masked}`} variant="ghost" disabled={loading} onClick={() => onRequest(identifier, d.kind)}>{d.masked}</Button>)}

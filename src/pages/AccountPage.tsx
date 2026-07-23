@@ -1,6 +1,6 @@
 import { Input } from '../components/Input';
 import { PillGroup } from '../components/PillGroup';
-import { sanitizeDigitsInput, sanitizePhoneInput } from '../lib/validation';
+import { sanitizeIdentificationInput, sanitizePhoneInput } from '../lib/validation';
 import type { AccountFormState, FieldErrors, IdentificationType, Role } from '../lib/types';
 
 interface AccountPageProps {
@@ -11,8 +11,11 @@ interface AccountPageProps {
 }
 
 const ID_OPTIONS: { value: IdentificationType; label: string }[] = [
+  { value: 'TI', label: 'Tarjeta de Identidad' },
   { value: 'CC', label: 'Cédula de ciudadanía' },
   { value: 'CE', label: 'Cédula de extranjería' },
+  { value: 'PPT', label: 'Permiso por Protección Temporal' },
+  { value: 'PEP', label: 'Permiso Especial de Permanencia' },
   { value: 'PA', label: 'Pasaporte' },
 ];
 
@@ -38,7 +41,7 @@ export function AccountPage({ value, errors, role, onChange }: AccountPageProps)
         placeholder="Ej. 1032456789"
         value={value.identificationNumber}
         error={errors.identificationNumber}
-        onChange={(e) => onChange({ identificationNumber: sanitizeDigitsInput(e.target.value) })}
+        onChange={(e) => onChange({ identificationNumber: sanitizeIdentificationInput(e.target.value) })}
       />
 
       <Input
